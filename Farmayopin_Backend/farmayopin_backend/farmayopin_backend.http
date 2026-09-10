@@ -1,0 +1,13 @@
+@direccionApi = http://localhost:5206
+
+GET {{direccionApi}}/api/productos
+Accept: application/json
+
+###
+
+GET {{direccionApi}}/api/productos/1
+Accept: application/json
+
+### Producto inexistente: devuelve 404
+GET {{direccionApi}}/api/productos/999
+Accept: application/json

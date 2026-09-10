@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "farmayopin_backend", "farmayopin_backend\farmayopin_backend.csproj", "{68226DA1-F75D-46B4-B5FD-D852A1631DB1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{68226DA1-F75D-46B4-B5FD-D852A1631DB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68226DA1-F75D-46B4-B5FD-D852A1631DB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68226DA1-F75D-46B4-B5FD-D852A1631DB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68226DA1-F75D-46B4-B5FD-D852A1631DB1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
