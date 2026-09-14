@@ -1,7 +1,22 @@
 using farmayopin_backend.Servicios;
 
+using farmayopin_backend.Persistencia;
+using Microsoft.EntityFrameworkCore;
+
 var constructor = WebApplication.CreateBuilder(args);
 
+//Acá agrego la conección con MariaDB
+constructor.Configuration.AddJsonFile(
+    "Persistencia/comunicacionMariaDB.json",
+    optional: false,
+    reloadOnChange: false);
+var conexion = constructor.Configuration.GetConnectionString("MariaDB")
+               ?? throw new InvalidOperationException("Falta configurar la conexión MariaDB.");
+
+constructor.Services.AddDbContext<ManejadorPersistencia>(configuracion =>
+    configuracion.UseMySql(conexion, ServerVersion.AutoDetect(conexion)));
+
+//Hasta acá
 constructor.Services.AddControllers();
 constructor.Services.AddOpenApi();
 constructor.Services.AddSingleton<ServicioProductos>();

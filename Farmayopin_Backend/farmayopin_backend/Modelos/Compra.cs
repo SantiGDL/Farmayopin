@@ -1,14 +1,17 @@
-using System.Runtime.InteropServices.JavaScript;
-
 namespace farmayopin_backend.Modelos;
 
 public class Compra
 {
-    //Enum estado, no sé como con los enums
-    public JSType.Date FechaCompra { get; set; }
-    public float PrecioTotal { get; set; }
-    //Tiene asociado 1 Cliente unico
-    //Tiene asociado 1 Carrito unico perteneciente al cliente anteriormente mencionado
-    //Tiene muchas lineas de compra No sé si sería así la refencia -> List<LineaDeCompra>
-    //No creo, debería ser algo como un One to Many como en Java o similar
+    public int Id { get; set; }
+    public EstadoCompra EstadoCompra { get; set; }
+    public DateTime FechaCompra { get; set; }
+    public decimal PrecioTotal { get; set; }
+    //Relacion Usuario (muchos a 1)
+    public int UsuarioAsociadoId { get; set; }
+    public Usuario UsuarioAsociado { get; set; } = null!;
+    //Relacion con Carrito (muchas compras a 1)
+    public int CarritoAsociadoId { get; set; }
+    public Carrito CarritoAsociado { get; set; } = null!;
+    //Relacion con Líneas de Compra (1 a muchas)
+    public List<LineaDeCompra> ListaDeLineasCompra { get; set; } = new();
 }

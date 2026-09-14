@@ -1,3 +1,4 @@
+using farmayopin_backend.DTOs.Usuarios;
 using farmayopin_backend.Modelos;
 using farmayopin_backend.Servicios;
 using Microsoft.AspNetCore.Mvc;
@@ -30,13 +31,9 @@ public class ControladorGeneral : ControllerBase
     }
     
     [HttpPost("nuevoCliente")]
-    public IActionResult CrearCliente([FromBody] Usuario nuevoCliente)
+    public IActionResult CrearCliente([FromBody] CrearClienteDTO nuevoCliente)
     {
         _logger.LogInformation("Llamada registrada a endpoint para crear nuevo cliente");
-
-        if (nuevoCliente.Rol == RolUsuario.Admin)
-        {
-            return BadRequest("No se puede crear un Admin por esta vía");        }
         _servicioGeneral.CrearCliente(nuevoCliente);
         return Ok();
     }
