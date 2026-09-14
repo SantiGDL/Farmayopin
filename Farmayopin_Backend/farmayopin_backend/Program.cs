@@ -19,8 +19,9 @@ constructor.Services.AddDbContext<ManejadorPersistencia>(configuracion =>
 //Hasta acá
 constructor.Services.AddControllers();
 constructor.Services.AddOpenApi();
+//Agrego los servicios para que los manege el gestor de dependencais como singleton
 constructor.Services.AddSingleton<ServicioProductos>();
-
+constructor.Services.AddScoped<ServicioGeneral>();
 var aplicacion = constructor.Build();
 
 if (aplicacion.Environment.IsDevelopment())

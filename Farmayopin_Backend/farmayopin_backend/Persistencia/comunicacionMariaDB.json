@@ -1,5 +1,4 @@
 {
   "ConnectionStrings": {
-    "MariaDB": "Server=localhost;Port=3306;Database=farmayopin;User=farmayopin_dev;Password=clave_local"
-  }
+    "MariaDB": "Server=localhost;Port=3306;Database=farmayopin;User=farmaUser;Password=farmaPass"  }
 } 
