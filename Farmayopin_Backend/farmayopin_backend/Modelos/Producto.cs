@@ -8,11 +8,12 @@ public class Producto
     [Required]
     public string Nombre { get; private set; }
     public string Detalle { get; private set; }
-    public float Precio { get; private set; }
+    public decimal Precio { get; private set; }
     public string? FotoUrl { get; private set; }
     public int Stock { get; private set; }
+   
 
-    public Producto(int id, string nombre, string detalle, float precio, string? fotoUrl, int stock)
+    public Producto(int id, string nombre, string detalle, decimal precio, string? fotoUrl, int stock)
     {
         Id = id;
         Nombre = nombre;

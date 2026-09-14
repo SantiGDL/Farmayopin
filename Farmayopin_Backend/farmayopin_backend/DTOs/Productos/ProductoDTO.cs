@@ -1,10 +1,25 @@
-using farmayopin_backend.Modelos;
+using System.ComponentModel.DataAnnotations;
 
-namespace farmayopin_backend.Contratos;
-
+namespace farmayopin_backend.DTOs.Productos;
 // Define el JSON público sin acoplarlo al almacenamiento del producto.
-public record ProductoDTO(int Id, string Nombre, string Detalle, decimal Precio, string? FotoUrl, int Stock)
+public class ProductoDTO
 {
-    public static ProductoDTO DesdeProducto(Producto producto) => new(
-        producto.Id, producto.Nombre, producto.Detalle, producto.Precio, producto.FotoUrl, producto.Stock);
+    public int Id { get; private set; }
+    [Required]
+    public string Nombre { get; private set; }
+    public string Detalle { get; private set; }
+    public decimal Precio { get; private set; }
+    public string? FotoUrl { get; private set; }
+    public int Stock { get; private set; }
+
+    public ProductoDTO(int id, string nombre, string detalle, decimal precio, string? fotoUrl, int stock)
+    {
+        this.Id = id;
+        this.Nombre = nombre;
+        this.Detalle = detalle;
+        this.Precio = precio;
+        this.FotoUrl = fotoUrl;
+        this.Stock = stock;
+    }
+
 }
