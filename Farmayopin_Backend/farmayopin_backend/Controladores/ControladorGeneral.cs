@@ -1,6 +1,7 @@
 using farmayopin_backend.DTOs.Usuarios;
 using farmayopin_backend.Modelos;
 using farmayopin_backend.Servicios;
+using farmayopin_backend.Servicios.Resultados;
 using Microsoft.AspNetCore.Mvc;
 
 namespace farmayopin_backend.Controladores;
@@ -29,6 +30,35 @@ public class ControladorGeneral : ControllerBase
         _servicioGeneral = servicio;
         _logger = logger;
     }
+
+    [HttpPost("consultarRolUsuario")]
+    public IActionResult ConsultarRolUsuario([FromBody] ConsultaRolDTO usuarioConsultado)
+    {
+        //Consulto Rol a BD
+        var resultado = _servicioGeneral.ConsultarRolUsuario(usuarioConsultado);
+        
+        if (resultado == ResultadoConsultarRolUsuario.RolCliente)
+        {
+            return Ok(new { rol = "Cliente" });     //Envio JSON con Rol Cliente 
+        }
+        else if (resultado == ResultadoConsultarRolUsuario.RolAdmin)
+        {
+            return Ok(new { rol = "Admin" });       //Envio JSON con Rol Admin  
+        }
+        else if (resultado == ResultadoConsultarRolUsuario.NoExisteUsuario ||
+                 resultado == ResultadoConsultarRolUsuario.PassNoCoincide)
+        {
+            return Unauthorized(new { mensaje = "Correo o contraseña incorrectos." });
+        }
+        else
+        {
+            return StatusCode(500, new { mensaje = "Rol de usuario no reconocido." });
+        }
+    }
+   
+    
+    
+    
     
     [HttpPost("nuevoCliente")]
     public IActionResult CrearCliente([FromBody] CrearClienteDTO nuevoCliente)

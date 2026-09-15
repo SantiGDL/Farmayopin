@@ -1,6 +1,7 @@
 using farmayopin_backend.DTOs.Usuarios;
 using farmayopin_backend.Modelos;
 using farmayopin_backend.Persistencia;
+using farmayopin_backend.Servicios.Resultados;
 
 namespace farmayopin_backend.Servicios;
 
@@ -44,4 +45,32 @@ public class ServicioGeneral
         _persistencia.SaveChanges();
         return nuevoUsuario;
     }
+
+
+
+    public ResultadoConsultarRolUsuario ConsultarRolUsuario(ConsultaRolDTO usuarioConsultado)
+    {
+        //Obtengo el Usuario
+        var consulta =
+            from usuario in _persistencia.Usuarios
+            where usuario.Correo == usuarioConsultado.Correo
+            select usuario;
+
+        Usuario? usuarioExistente = consulta.SingleOrDefault();
+        //Validaciones
+        if (usuarioExistente == null) return ResultadoConsultarRolUsuario.NoExisteUsuario;
+        
+        if (usuarioExistente.Pass != usuarioConsultado.Pass) return ResultadoConsultarRolUsuario.PassNoCoincide;
+        
+        if (usuarioExistente.Rol == RolUsuario.Admin) return ResultadoConsultarRolUsuario.RolAdmin;
+        
+        if (usuarioExistente.Rol == RolUsuario.Cliente)  return ResultadoConsultarRolUsuario.RolCliente;
+        else{ //Es redundante, pero me ayuda a ser feliz
+            throw new InvalidOperationException("Rol de usuario no reconocido.");
+        }
+        
+        
+        
+    }
+    
 }
