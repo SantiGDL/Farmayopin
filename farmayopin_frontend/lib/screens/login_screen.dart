@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'register_screen.dart';
 import '../widgets/wave_background.dart';
 
 /// StatefulWidget permite actualizar la visibilidad de la contraseña.
@@ -109,8 +110,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 validator: (value) {
                                   final email = value?.trim() ?? '';
-                                  if (email.isEmpty)
+                                  if (email.isEmpty) {
                                     return 'Ingresá tu correo electrónico.';
+                                  }
                                   if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
                                       .hasMatch(email)) {
                                     return 'Ingresá un correo válido.';
@@ -184,9 +186,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   TextButton(
-                                    onPressed: () => _showMessage(
-                                      'El registro de usuarios aún no está disponible.',
-                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => const RegisterScreen(),
+                                        ),
+                                      );
+                                    },
                                     child: const Text(
                                       'Regístrate',
                                       style: TextStyle(
