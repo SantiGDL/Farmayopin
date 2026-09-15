@@ -32,8 +32,7 @@ constructor.Services.AddControllers();
 constructor.Services.AddOpenApi();
 //Agrego los servicios para que los manege el gestor de depedencias como singleton
 //Es para que el backend pueda crear el servicio de productos como dependencia injectable en otras partes del sistema.
-//Osea que cuando otra clase lo necesite, el sistema le va a dar la misma instancia de ServicioProductos que se creó acá.
-constructor.Services.AddSingleton<ServicioProductos>();
+//O sea que cuando otra clase lo necesite, el sistema le va a dar la misma instancia de ServicioProductos que se creó acá.
 constructor.Services.AddScoped<ServicioGeneral>();
 constructor.Services.AddScoped<ServicioAdmin>();
 var aplicacion = constructor.Build();

@@ -6,15 +6,19 @@ public class Producto
 {
     public int Id { get; private set; }
     [Required]
+    public string Codigo { get; set; }
+    [Required]
     public string Nombre { get; set; }
     public string Detalle { get; set; }
     public decimal Precio { get; set; }
     public string? FotoUrl { get; set; }
     public int Stock { get; set; }
-   
+    public CategoriaProducto? Categoria { get; set; }
+    public UnidadMedida? Unidad { get; set; }
 
-    public Producto(string nombre, string detalle, decimal precio, string? fotoUrl, int stock)
+    public Producto(string codigo, string nombre, string detalle, decimal precio, string? fotoUrl, int stock)
     {
+        Codigo = codigo;
         Nombre = nombre;
         Detalle = detalle;
         Precio = precio;

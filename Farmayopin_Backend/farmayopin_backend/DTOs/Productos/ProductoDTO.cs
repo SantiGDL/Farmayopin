@@ -6,14 +6,17 @@ public class ProductoDTO
 {
     public int Id { get; private set; }
     [Required]
+    public string Codigo { get; set; }
+    [Required]
     public string Nombre { get; private set; }
     public string Detalle { get; private set; }
     public decimal Precio { get; private set; }
     public string? FotoUrl { get; private set; }
     public int Stock { get; private set; }
 
-    public ProductoDTO(string nombre, string detalle, decimal precio, string? fotoUrl, int stock)
+    public ProductoDTO(string codigo, string nombre, string detalle, decimal precio, string? fotoUrl, int stock)
     {
+        this.Codigo = codigo;
         this.Nombre = nombre;
         this.Detalle = detalle;
         this.Precio = precio;
