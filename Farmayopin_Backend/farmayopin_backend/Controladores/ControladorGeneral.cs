@@ -34,8 +34,26 @@ public class ControladorGeneral : ControllerBase
     public IActionResult CrearCliente([FromBody] CrearClienteDTO nuevoCliente)
     {
         _logger.LogInformation("Llamada registrada a endpoint para crear nuevo cliente");
-        _servicioGeneral.CrearCliente(nuevoCliente);
-        return Ok();
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new { mensaje = "Los datos del cliente no son válidos." });
+        }
+
+        try
+        {
+            _servicioGeneral.CrearCliente(nuevoCliente);
+            return Ok(new { mensaje = "Usuario registrado correctamente." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { mensaje = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear un nuevo cliente");
+            return StatusCode(500, new { mensaje = "No se pudo registrar el usuario." });
+        }
     }
     
 }
