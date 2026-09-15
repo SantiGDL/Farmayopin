@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'screens/login_screen.dart';
+//import 'screens/crear_producto_screen.dart';
 
 void main() => runApp(const FarmayopinApp());
 
 class FarmayopinApp extends StatelessWidget {
-  const FarmayopinApp({super.key});
+  const FarmayopinApp({super.key, this.home = const LoginScreen()});
+
+  // Permite elegir una pantalla de vista previa reutilizando el mismo tema.
+  final Widget home;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +52,7 @@ class FarmayopinApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const LoginScreen(),
+      home: home,
     );
   }
 }

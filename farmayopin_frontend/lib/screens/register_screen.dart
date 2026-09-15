@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 
 import '../widgets/wave_background.dart';
 
+// StatefulWidget representa una pantalla con datos que pueden cambiar.
+// Su clase State guarda esos datos y construye la interfaz.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -13,6 +15,8 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  // En Dart, el prefijo _ hace que un miembro sea privado al archivo.
+  // La clave permite validar el formulario; los controllers leen los inputs.
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -22,6 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _hideConfirmPassword = true;
   bool _isSubmitting = false;
 
+  // Libera los controllers cuando se cierra la pantalla (similar a Dispose).
   @override
   void dispose() {
     _nameController.dispose();
@@ -33,16 +38,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.red.shade700 : null,
-        ),
-      );
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red.shade700 : null,
+      ),
+    );
   }
 
+  // Future<void> es similar a Task en C#: async/await espera la respuesta HTTP.
   Future<void> _submitRegistration() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -50,7 +56,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    setState(() => _isSubmitting = true);
+    // setState avisa a Flutter que debe actualizar la interfaz.
+    setState(() {
+      _isSubmitting = true;
+    });
 
     try {
       final body = {
@@ -62,11 +71,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       final response = await _registerClient(body);
 
+      // Después del await, la pantalla podría haberse cerrado.
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _showMessage('Usuario registrado correctamente.');
-        Navigator.of(context).pop();
+        _goBack();
       } else {
         final data = response.body.isNotEmpty
             ? _decodeResponse(response.body)
@@ -76,7 +86,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      _showMessage('No se pudo conectar con el servidor. Revisá que el backend esté corriendo.', isError: true);
+      _showMessage(
+        'No se pudo conectar con el servidor. Revisá que el backend esté corriendo.',
+        isError: true,
+      );
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -100,148 +113,217 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  // Un validator devuelve un mensaje de error, o null si el valor es válido.
+  // String? equivale a un string que admite null, como string? en C#.
+  String? _validateName(String? value) {
+    final name = value?.trim() ?? '';
+    if (name.isEmpty) return 'Ingresá tu nombre completo.';
+    if (name.length < 2) return 'El nombre es demasiado corto.';
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) return 'Ingresá tu correo electrónico.';
+    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
+      return 'Ingresá un correo válido.';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    final password = value ?? '';
+    if (password.isEmpty) return 'Ingresá una contraseña.';
+    if (password.length < 6) {
+      return 'La contraseña debe tener al menos 6 caracteres.';
+    }
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    final confirm = value ?? '';
+    if (confirm.isEmpty) return 'Confirmá tu contraseña.';
+    if (confirm != _passwordController.text) {
+      return 'Las contraseñas no coinciden.';
+    }
+    return null;
+  }
+
+  // build describe la interfaz: cada Widget cumple el rol de un elemento HTML.
+  // Las propiedades de estilo y espaciado cumplen un rol parecido al CSS.
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
-     appBar: AppBar(
-      title: const Text('Registro'),
-      centerTitle: true,
-      ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Registro'), centerTitle: true),
       body: WaveBackground(
-      child: SafeArea(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: ConstrainedBox(
-               constraints: const BoxConstraints(maxWidth: 480),
-              child: Form(
-                key: _formKey,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 12),
-                    Image.asset(
-                      'assets/images/farmayopin_logo.png',
-                      width: 220,
-                      semanticLabel: 'Farmayopin',
-                      ),
-                      const SizedBox(height: 18),
-                      const Text(
-                        'Crear cuenta',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      const _FieldLabel(icon: Icons.person_outline, text: 'Nombre completo:'),
-                      TextFormField(
-                        controller: _nameController,
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(hintText: 'Ingrese su nombre'),
-                        validator: (value) {
-                          final name = value?.trim() ?? '';
-                          if (name.isEmpty) return 'Ingresá tu nombre completo.';
-                          if (name.length < 2) return 'El nombre es demasiado corto.';
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      const _FieldLabel(icon: Icons.alternate_email, text: 'Correo electrónico:'),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        autocorrect: false,
-                        decoration: const InputDecoration(hintText: 'ejemplo@correo.com'),
-                        validator: (value) {
-                          final email = value?.trim() ?? '';
-                          if (email.isEmpty) return 'Ingresá tu correo electrónico.';
-                          if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
-                            return 'Ingresá un correo válido.';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      const _FieldLabel(icon: Icons.lock_outline, text: 'Contraseña:'),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _hidePassword,
-                        enableSuggestions: false,
-                        autocorrect: false,
-                        textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(
-                          hintText: 'Ingresá tu contraseña',
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(() => _hidePassword = !_hidePassword),
-                            icon: Icon(
-                              _hidePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            ),
-                          ),
-                        ),
-                        validator: (value) {
-                          final password = value ?? '';
-                          if (password.isEmpty) return 'Ingresá una contraseña.';
-                          if (password.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      const _FieldLabel(icon: Icons.lock_reset, text: 'Confirmar contraseña:'),
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: _hideConfirmPassword,
-                        enableSuggestions: false,
-                        autocorrect: false,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _submitRegistration(),
-                        decoration: InputDecoration(
-                          hintText: 'Repetí la contraseña',
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(() => _hideConfirmPassword = !_hideConfirmPassword),
-                            icon: Icon(
-                              _hideConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            ),
-                          ),
-                        ),
-                        validator: (value) {
-                          final confirm = value ?? '';
-                          if (confirm.isEmpty) return 'Confirmá tu contraseña.';
-                          if (confirm != _passwordController.text) {
-                            return 'Las contraseñas no coinciden.';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 28),
-                      FilledButton(
-                        onPressed: _isSubmitting ? null : _submitRegistration,
-                        child: _isSubmitting
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Text('Registrarme'),
-                      ),
-                      const SizedBox(height: 18),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Ya tengo cuenta'),
-                      ),
-                    ],
-                  ),
-                ),
+        showTopWave: false,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: _buildRegistrationForm(),
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildRegistrationForm() {
+    return Form(
+      key: _formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      // Column ordena sus children verticalmente, como flex-direction: column.
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildHeader(),
+          const _FieldLabel(
+            icon: Icons.person_outline,
+            text: 'Nombre completo:',
+          ),
+          _buildNameField(),
+          const SizedBox(height: 20),
+          const _FieldLabel(
+            icon: Icons.alternate_email,
+            text: 'Correo electrónico:',
+          ),
+          _buildEmailField(),
+          const SizedBox(height: 20),
+          const _FieldLabel(icon: Icons.lock_outline, text: 'Contraseña:'),
+          _buildPasswordField(),
+          const SizedBox(height: 20),
+          const _FieldLabel(
+            icon: Icons.lock_reset,
+            text: 'Confirmar contraseña:',
+          ),
+          _buildConfirmPasswordField(),
+          const SizedBox(height: 28),
+          _buildSubmitButton(),
+          const SizedBox(height: 18),
+          TextButton(onPressed: _goBack, child: const Text('Ya tengo cuenta')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 12),
+        Image.asset(
+          'assets/images/farmayopin_logo.png',
+          width: 220,
+          semanticLabel: 'Farmayopin',
+        ),
+        const SizedBox(height: 18),
+        const Text(
+          'Crear cuenta',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 28),
+      ],
+    );
+  }
+
+  Widget _buildNameField() {
+    return TextFormField(
+      controller: _nameController,
+      textInputAction: TextInputAction.next,
+      decoration: const InputDecoration(hintText: 'Ingrese su nombre'),
+      validator: _validateName,
+    );
+  }
+
+  Widget _buildEmailField() {
+    return TextFormField(
+      controller: _emailController,
+      keyboardType: TextInputType.emailAddress,
+      textInputAction: TextInputAction.next,
+      autocorrect: false,
+      decoration: const InputDecoration(hintText: 'ejemplo@correo.com'),
+      validator: _validateEmail,
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: _hidePassword,
+      enableSuggestions: false,
+      autocorrect: false,
+      textInputAction: TextInputAction.next,
+      decoration: InputDecoration(
+        hintText: 'Ingresá tu contraseña',
+        suffixIcon: IconButton(
+          onPressed: () {
+            setState(() {
+              _hidePassword = !_hidePassword;
+            });
+          },
+          icon: Icon(
+            _hidePassword
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+          ),
+        ),
+      ),
+      validator: _validatePassword,
+    );
+  }
+
+  Widget _buildConfirmPasswordField() {
+    return TextFormField(
+      controller: _confirmPasswordController,
+      obscureText: _hideConfirmPassword,
+      enableSuggestions: false,
+      autocorrect: false,
+      textInputAction: TextInputAction.done,
+      onFieldSubmitted: (_) => _submitRegistration(),
+      decoration: InputDecoration(
+        hintText: 'Repetí la contraseña',
+        suffixIcon: IconButton(
+          onPressed: () {
+            setState(() {
+              _hideConfirmPassword = !_hideConfirmPassword;
+            });
+          },
+          icon: Icon(
+            _hideConfirmPassword
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+          ),
+        ),
+      ),
+      validator: _validateConfirmPassword,
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return FilledButton(
+      // Un callback null deshabilita el botón mientras se envía la solicitud.
+      onPressed: _isSubmitting ? null : _submitRegistration,
+      child: _isSubmitting
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Text('Registrarme'),
+    );
+  }
+
+  void _goBack() {
+    Navigator.of(context).pop();
   }
 }
 
@@ -270,5 +352,3 @@ class _FieldLabel extends StatelessWidget {
     );
   }
 }
-
-
