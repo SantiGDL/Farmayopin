@@ -155,19 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     : null,
                               ),
                               const SizedBox(height: 16),
-                              TextButton(
-                                onPressed: () => _showMessage(
-                                  'La recuperación de contraseña aún no está disponible.',
-                                ),
-                                child: const Text(
-                                  '¿Olvidaste la contraseña?',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
+                              
                               const SizedBox(height: 24),
                               FilledButton(
                                 onPressed: _login,
