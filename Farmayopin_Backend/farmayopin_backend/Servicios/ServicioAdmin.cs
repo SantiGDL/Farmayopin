@@ -1,6 +1,7 @@
 using farmayopin_backend.DTOs.Productos;
 using farmayopin_backend.Modelos;
 using farmayopin_backend.Persistencia;
+using farmayopin_backend.Servicios.Resultados;
 
 namespace farmayopin_backend.Servicios;
 
@@ -14,19 +15,36 @@ public class ServicioAdmin
         this._persistencia = persistencia;
     }
     
-    //Funciones del Servicio Admin:
-    public bool CrearProducto(CrearProductoDTO nuevoProducto)
-    {
-        //Válido los datos que me llegan
-        //Veo que el precio y el stock no sean negativos:
-        if ((nuevoProducto.Precio < 0) || (nuevoProducto.Stock < 0)) return false;
+    //<----Funciones del Servicio Admin---->
 
+    public bool BuscarProductoPorCodigo(string codigo)
+    {
+        var productoCodigoBuscado =
+            from producto in _persistencia.Productos
+            where producto.Codigo == codigo
+            select producto;
+
+        if (productoCodigoBuscado.Any())
+        {
+            return true;
+        }
         else
         {
-
-            //int id, string nombre, string detalle, decimal precio, string? fotoUrl, int stock)
-
+            return false;
+        }
+    }
+    
+    public ResultadoCrearProducto CrearProducto(CrearProductoDTO nuevoProducto)
+    {
+        //Veo que el codigo no exista en la BD
+        if (BuscarProductoPorCodigo(nuevoProducto.Codigo)) return ResultadoCrearProducto.ProductoYaExistente;   //El producto ya existe
+        
+        //Veo que el precio y el stock no sean negativos:
+        if ((nuevoProducto.Precio < 0) || (nuevoProducto.Stock < 0)) return ResultadoCrearProducto.DatosInvalidos;
+        //Si pasa los controles creo el producto y retorno true
+        {
             Producto productoNuevo = new Producto(
+                nuevoProducto.Codigo,
                 nuevoProducto.Nombre,
                 nuevoProducto.Detalle,
                 nuevoProducto.Precio,
@@ -36,7 +54,32 @@ public class ServicioAdmin
             _persistencia.Productos.Add(productoNuevo);
             _persistencia.SaveChanges();
 
-            return true;
+            return ResultadoCrearProducto.Creado;
         }
+    }
+    
+    
+    public ResultadoEditarProducto EditarProducto(EditarProductoDTO productoEditado)
+    {
+        if (productoEditado.Precio < 0 || productoEditado.Stock < 0)  return ResultadoEditarProducto.DatosInvalidos;
+
+        var consulta =
+            from producto in _persistencia.Productos
+            where producto.Codigo == productoEditado.Codigo
+            select producto;
+
+        Producto? productoExistente = consulta.FirstOrDefault();
+
+        if (productoExistente == null)  return ResultadoEditarProducto.ProductoNoExistente;
+
+        productoExistente.Nombre = productoEditado.Nombre;
+        productoExistente.Detalle = productoEditado.Detalle;
+        productoExistente.Precio = productoEditado.Precio;
+        productoExistente.FotoUrl = productoEditado.FotoUrl;
+        productoExistente.Stock = productoEditado.Stock;
+
+        _persistencia.SaveChanges();
+
+        return ResultadoEditarProducto.ProductoEditado;
     }
 }

@@ -3,7 +3,7 @@ using farmayopin_backend.Modelos;
 
 namespace farmayopin_backend.DTOs.Productos;
 
-public class CrearProductoDTO
+public class EditarProductoDTO
 {
     [Required]
     public string Codigo { get; set; }
@@ -15,4 +15,5 @@ public class CrearProductoDTO
     public int Stock { get; set; }
     public CategoriaProducto? Categoria { get; set; }
     public UnidadMedida? Unidad { get; set; }
+
 }
