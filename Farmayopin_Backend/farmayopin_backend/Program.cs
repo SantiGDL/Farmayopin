@@ -35,6 +35,7 @@ constructor.Services.AddOpenApi();
 //Osea que cuando otra clase lo necesite, el sistema le va a dar la misma instancia de ServicioProductos que se creó acá.
 constructor.Services.AddSingleton<ServicioProductos>();
 constructor.Services.AddScoped<ServicioGeneral>();
+constructor.Services.AddScoped<ServicioAdmin>();
 var aplicacion = constructor.Build();
 
 if (aplicacion.Environment.IsDevelopment())

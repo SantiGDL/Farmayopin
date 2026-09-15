@@ -12,9 +12,8 @@ public class ProductoDTO
     public string? FotoUrl { get; private set; }
     public int Stock { get; private set; }
 
-    public ProductoDTO(int id, string nombre, string detalle, decimal precio, string? fotoUrl, int stock)
+    public ProductoDTO(string nombre, string detalle, decimal precio, string? fotoUrl, int stock)
     {
-        this.Id = id;
         this.Nombre = nombre;
         this.Detalle = detalle;
         this.Precio = precio;
