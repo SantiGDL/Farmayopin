@@ -17,6 +17,7 @@ public class ServicioAdmin
     
     //<----Funciones del Servicio Admin---->
 
+    //<--Buscar Producto-->
     public bool BuscarProductoPorCodigo(string codigo)
     {
         var productoCodigoBuscado =
@@ -33,7 +34,7 @@ public class ServicioAdmin
             return false;
         }
     }
-    
+    //<--Crear Producto-->
     public ResultadoCrearProducto CrearProducto(CrearProductoDTO nuevoProducto)
     {
         //Veo que el codigo no exista en la BD
@@ -58,7 +59,7 @@ public class ServicioAdmin
         }
     }
     
-    
+    //<--Editar Producto-->
     public ResultadoEditarProducto EditarProducto(EditarProductoDTO productoEditado)
     {
         if (productoEditado.Precio < 0 || productoEditado.Stock < 0)  return ResultadoEditarProducto.DatosInvalidos;
@@ -82,4 +83,35 @@ public class ServicioAdmin
 
         return ResultadoEditarProducto.ProductoEditado;
     }
+
+
+    // <--Listar Productos-->
+    public List<ProductoDTO> ListarProductos()
+    {
+        var productos = _persistencia.Productos
+            .OrderBy(producto => producto.Nombre)
+            .ToList();
+
+        List<ProductoDTO> listaProductosDTO = new List<ProductoDTO>();
+
+        foreach (var producto in productos)
+        {
+            ProductoDTO productoDTO = new ProductoDTO(
+                producto.Id,
+                producto.Codigo,
+                producto.Nombre,
+                producto.Detalle,
+                producto.Precio,
+                producto.FotoUrl,
+                producto.Stock
+            );
+
+            listaProductosDTO.Add(productoDTO);
+        }
+
+        return listaProductosDTO;
+    }
+
+
+
 }

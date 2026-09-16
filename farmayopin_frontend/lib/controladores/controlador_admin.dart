@@ -1,5 +1,6 @@
 import '../dtos/producto_listado.dart';
 import '../screens/listar_productos_screen.dart';
+import '../screens/detalle_producto_screen.dart';
 
 import 'package:flutter/material.dart';
 
@@ -24,8 +25,9 @@ class ControladorAdmin {
     );
   }
 
-  List<ProductoListado> cargarProductosEjemplo() {
-    return servicio.listarProductosEjemplo();
+  //// Obtiene la lista de productos para mostrarla en pantalla.
+  Future<List<ProductoListado>> cargarProductosPantalla() {
+    return servicio.listarProductos();
   }
 
   List<ProductoListado> filtrarProductos(
@@ -49,7 +51,11 @@ class ControladorAdmin {
   }
 
   void verProducto(BuildContext referenciaPantalla, ProductoListado producto) {
-    mostrarPendiente(referenciaPantalla, 'Ver ${producto.nombre}');
+    Navigator.of(referenciaPantalla).push(
+      MaterialPageRoute(
+        builder: (context) => DetalleProductoScreen(producto: producto),
+      ),
+    );
   }
 
   void editarProducto(
@@ -106,4 +112,7 @@ class ControladorAdmin {
     if (reemplazar) messenger.hideCurrentSnackBar();
     messenger.showSnackBar(SnackBar(content: Text(mensaje)));
   }
+
+
+  
 }
