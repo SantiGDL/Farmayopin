@@ -1,3 +1,6 @@
+import '../dtos/producto_listado.dart';
+import '../screens/listar_productos_screen.dart';
+
 import 'package:flutter/material.dart';
 
 import '../servicios/servicio_admin.dart';
@@ -11,9 +14,59 @@ class ControladorAdmin {
 
   final ServicioAdmin servicio;
 
+  void abrirListadoProductos(BuildContext referenciaPantalla) {
+    Navigator.of(referenciaPantalla).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return const ListarProductosScreen();
+        },
+      ),
+    );
+  }
+
+  List<ProductoListado> cargarProductosEjemplo() {
+    return servicio.listarProductosEjemplo();
+  }
+
+  List<ProductoListado> filtrarProductos(
+    List<ProductoListado> productos,
+    String busqueda,
+    String categoria,
+  ) {
+    final List<ProductoListado> resultado = [];
+    final String texto = busqueda.trim().toLowerCase();
+    for (final ProductoListado producto in productos) {
+      final bool coincideCategoria =
+          categoria == 'Todos' || producto.categoria == categoria;
+      final bool coincideTexto =
+          producto.nombre.toLowerCase().contains(texto) ||
+          producto.descripcion.toLowerCase().contains(texto);
+      if (coincideCategoria && coincideTexto) {
+        resultado.add(producto);
+      }
+    }
+    return resultado;
+  }
+
+  void verProducto(BuildContext referenciaPantalla, ProductoListado producto) {
+    mostrarPendiente(referenciaPantalla, 'Ver ${producto.nombre}');
+  }
+
+  void editarProducto(
+    BuildContext referenciaPantalla,
+    ProductoListado producto,
+  ) {
+    mostrarPendiente(referenciaPantalla, 'Editar ${producto.nombre}');
+  }
+
   void abrirCrearProducto(BuildContext context) {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => const CrearProductoScreen()));
+  }
+
+  void volverAlMenu(BuildContext referenciaPantalla) {
+    // Crear producto se abrió con push: pop recupera el menú anterior.
+    Navigator.of(referenciaPantalla).pop();
   }
 
   void mostrarPendiente(BuildContext context, String funcion) {

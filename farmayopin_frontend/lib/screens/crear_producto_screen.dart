@@ -30,7 +30,16 @@ class CrearProductoScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   encabezado(context),
-                  const SizedBox(height: 24), // Espacio entre bloques.
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => controlador.volverAlMenu(context),
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('Volver'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   tarjetaPresentacion(),
                   const SizedBox(height: 24),
 

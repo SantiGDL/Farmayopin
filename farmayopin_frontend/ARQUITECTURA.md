@@ -1,5 +1,7 @@
 # Cómo leer el frontend
 
+Para continuar el desarrollo, leer primero la [guía de estilo y arquitectura para nuevas sesiones](GUIA_PARA_NUEVAS_SESIONES.md).
+
 La organización sigue los mismos grupos que el backend: General, Admin y Cliente.
 
 ```text
@@ -18,7 +20,7 @@ Backend C# → Base de datos
 | --- | --- | --- | --- |
 | General | Login y registro | `ControladorGeneral` | `ServicioGeneral` |
 | Admin | Panel y crear producto | `ControladorAdmin` | `ServicioAdmin` |
-| Cliente | Todavía no hay | `ControladorCliente` (reservado) | `ServicioCliente` (reservado) |
+| Cliente | Panel del cliente | `ControladorCliente` | `ServicioCliente` |
 
 El controlador de Flutter recibe clics de botones, no solicitudes HTTP como el de C#.
 Los servicios no importan Flutter ni conocen `BuildContext`, pantallas o navegación.
@@ -50,12 +52,10 @@ que nuestro `ControladorGeneral`, que coordina el formulario completo.
 Esta refactorización conserva el alcance anterior:
 
 - Registro: conectado al backend en `http://localhost:5206`.
-- Login: validación local y aviso de función pendiente. Para tu próximo ejercicio,
-  agregá la petición `consultarRolUsuario` en `ServicioGeneral`, y la decisión de
-  navegación en `ControladorGeneral.iniciarSesion`.
+- Login: conectado a `consultarRolUsuario`; el controlador abre el panel de Admin o Cliente según el resultado.
 - Admin: abre el formulario de producto; las demás operaciones conservan sus avisos.
 - Crear producto: sigue siendo una maqueta, sin guardado ni selección de fotos.
-- Cliente: clases reservadas, sin operaciones inventadas.
+- Cliente: panel conectado al login; catálogo, carrito e histórico muestran avisos de función pendiente.
 - Cerrar sesión desde el panel: vuelve al login; todavía no hay sesión/token.
 
 ## Verificación
@@ -72,7 +72,7 @@ flutter test
 En `lib/dtos/` cada resultado tiene su propia clase:
 
 - `ResultadoRegistro`: éxito y mensaje del registro. Ya lo devuelve `ServicioGeneral.registrarCliente`.
-- `ResultadoConsultarRol`: éxito, mensaje y rol opcional (`Admin` o `Cliente`). Preparado para conectar el login; todavía no se usa.
+- `ResultadoIniciarSesion`: éxito, mensaje y rol opcional (`Admin` o `Cliente`). Lo devuelve el servicio al iniciar sesión.
 
 Los DTO solo transportan datos. El servicio interpreta JSON y el controlador decide cómo responder en la interfaz.
 

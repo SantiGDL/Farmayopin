@@ -12,8 +12,7 @@ class AdminHomeScreen extends StatelessWidget {
   // Equivalen a variables de CSS: los estilos compartidos se definen una vez.
   static const _bannerColor = Color(0xFF50BDB5);
   static const _secondaryText = Color(0xFF929299);
-  static const _iconsPath =
-      'assets/Admin_PantallaPrincipal/IconosPantallaPrincipalAdmin';
+  static const _iconsPath = 'assets/Iconos';
 
   @override
   Widget build(BuildContext context) {
@@ -97,55 +96,95 @@ class AdminHomeScreen extends StatelessWidget {
   Widget _buildWelcomeCard() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: _bannerColor,
         borderRadius: BorderRadius.circular(22),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'PANEL ADMINISTRADOR',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 18),
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double escalaTexto =
+              MediaQuery.textScalerOf(context).scale(14) / 14;
+          final bool necesitaMasEspacio =
+              constraints.maxWidth < 320 || escalaTexto > 1.2;
+
+          // En pantallas angostas o con texto ampliado, apilamos los elementos
+          // para que la ilustración no tape las palabras.
+          if (necesitaMasEspacio) {
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _welcomeText(double.infinity, double.infinity),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _bottleImage(),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Stack funciona como un contenedor con position: relative en CSS.
+          // Positioned coloca el frasco sin quitarle ancho al título.
+          return Stack(
             children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Gestión de artículos de farmacia',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                        height: 1.15,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      'Accedé rápidamente a las funciones administrativas del sistema',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ],
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 213),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: _welcomeText(235, constraints.maxWidth - 195),
                 ),
               ),
-              const SizedBox(width: 8),
-              // Como <img src="..."> en HTML: carga una imagen de assets.
-              Image.asset(
-                '$_iconsPath/IconoAdmin.png',
-                width: 120,
-                height: 140,
-                fit: BoxFit.contain,
-                semanticLabel: 'Frasco de farmacia',
-              ),
+              Positioned(right: 12, bottom: 8, child: _bottleImage()),
             ],
-          ),
-        ],
+          );
+        },
       ),
+    );
+  }
+
+  Widget _welcomeText(double anchoTitulo, double anchoDescripcion) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'PANEL ADMINISTRADOR',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          width: anchoTitulo,
+          child: const Text(
+            'Gestión de artículos de farmacia',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 21,
+              fontWeight: FontWeight.bold,
+              height: 1.15,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: anchoDescripcion,
+          child: const Text(
+            'Accedé rápidamente a las funciones administrativas del sistema',
+            style: TextStyle(color: Colors.white, fontSize: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _bottleImage() {
+    // Tamaño de la ilustración independiente del espacio que ocupa el texto.
+    return Image.asset(
+      '$_iconsPath/IconoAdmin.png',
+      width: 160,
+      height: 155,
+      fit: BoxFit.contain,
+      semanticLabel: 'Frasco de farmacia',
     );
   }
 
@@ -168,7 +207,7 @@ class AdminHomeScreen extends StatelessWidget {
               description: 'Ver todos los productos registrados en el sistema.',
               iconFile: 'IconoListarProductos.png',
               onTap: () =>
-                  controlador.mostrarPendiente(context, 'Listar productos'),
+                  controlador.abrirListadoProductos(context),
             ),
             _buildProductCard(
               width: cardWidth,

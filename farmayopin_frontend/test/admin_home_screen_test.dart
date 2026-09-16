@@ -37,7 +37,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(CrearProductoScreen), findsOneWidget);
 
-      Navigator.of(tester.element(find.byType(CrearProductoScreen))).pop();
+      await tester.ensureVisible(find.text('Volver'));
+      await tester.tap(find.text('Volver'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Cerrar sesión'));
       await tester.tap(find.text('Cerrar sesión'));
