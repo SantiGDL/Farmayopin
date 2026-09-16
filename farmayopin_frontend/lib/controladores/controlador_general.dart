@@ -5,6 +5,7 @@ import '../screens/register_screen.dart';
 import '../screens/login_screen.dart';
 import '../dtos/resultado_iniciar_sesion.dart';
 import '../screens/admin_home_screen.dart';
+import '../screens/cliente_home_screen.dart';
 
 // Pantalla -> ControladorGeneral -> ServicioGeneral.
 // A diferencia de un controller HTTP de C#, este recibe eventos de la interfaz.
@@ -78,9 +79,10 @@ class ControladorGeneral extends ChangeNotifier {
     }
 
     if (resultado.rol == 'Cliente') {
-      _mostrarMensaje(
-        referenciaPantalla,
-        'La pantalla de cliente todavía no está disponible.',
+      Navigator.of(referenciaPantalla).pushReplacement(
+        MaterialPageRoute(builder: (context) {
+          return const ClienteHomeScreen();
+        }),
       );
       return;
     }
