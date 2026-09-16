@@ -23,6 +23,13 @@ public class ManejadorPersistencia : DbContext
     protected override void OnModelCreating(ModelBuilder modelo) 
     {
         base.OnModelCreating(modelo); // Ejecuta la configuración de la clase base DbContext.
+
+        modelo.Entity<Usuario>()
+            .Property(usuario => usuario.Rol)
+            .HasConversion(
+                rol => rol.ToString().ToUpperInvariant(),
+                valor => Enum.Parse<RolUsuario>(valor, true))
+            .HasMaxLength(20);
         
         modelo.Entity<Usuario>() // Comienza la configuración de la entidad Usuario.
             .HasOne(usuario => usuario.CarritoAsociado) // Un usuario puede tener un carrito asociado.
@@ -45,4 +52,3 @@ public class ManejadorPersistencia : DbContext
     }
     
 }
-
