@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../controladores/controlador_admin.dart';
+
 // Esta pantalla es una guía VISUAL: todavía no envía datos al backend.
 // Pensá en los widgets como etiquetas HTML que se anidan:
 // Column = elementos en vertical; Row = elementos en horizontal.
 class CrearProductoScreen extends StatelessWidget {
   const CrearProductoScreen({super.key});
+
+  final controlador = const ControladorAdmin();
 
   // Como una variable de CSS: reutilizamos el mismo color.
   static const verde = Color(0xFF00AAA5);
@@ -111,10 +115,7 @@ class CrearProductoScreen extends StatelessWidget {
 
                   // onPressed equivale a la función de un onclick.
                   FilledButton.icon(
-                    onPressed: () => mostrarAviso(
-                      context,
-                      'Esta es una maqueta: falta conectar el guardado a la API.',
-                    ),
+                    onPressed: () => controlador.guardarProducto(context),
                     icon: const Icon(Icons.save_outlined),
                     label: const Text('Guardar producto'),
                     style: FilledButton.styleFrom(
@@ -126,10 +127,7 @@ class CrearProductoScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton(
-                    onPressed: () => mostrarAviso(
-                      context,
-                      'Cancelar volverá al menú cuando agreguemos esa pantalla.',
-                    ),
+                    onPressed: () => controlador.cancelarProducto(context),
                     child: const Text('Cancelar'),
                   ),
                 ],
@@ -158,10 +156,7 @@ class CrearProductoScreen extends StatelessWidget {
           ],
         ),
         TextButton.icon(
-          onPressed: () => mostrarAviso(
-            context,
-            'Falta conectar el cierre de sesión.',
-          ),
+          onPressed: () => controlador.cerrarSesionDesdeProducto(context),
           icon: const Icon(Icons.logout, size: 18),
           label: const Text('Cerrar sesión'),
           style: TextButton.styleFrom(
@@ -247,10 +242,7 @@ class CrearProductoScreen extends StatelessWidget {
 
   Widget zonaFoto(BuildContext context) {
     return OutlinedButton(
-      onPressed: () => mostrarAviso(
-        context,
-        'Falta implementar la selección de una foto.',
-      ),
+      onPressed: () => controlador.seleccionarFoto(context),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.all(20),
         backgroundColor: const Color(0xFFF5FAF9),
@@ -266,13 +258,6 @@ class CrearProductoScreen extends StatelessWidget {
           Text('JPG o PNG · Máximo 5 MB', style: TextStyle(fontSize: 12)),
         ],
       ),
-    );
-  }
-
-  // SnackBar es un mensaje breve al pie de la pantalla.
-  void mostrarAviso(BuildContext context, String mensaje) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mensaje)),
     );
   }
 }

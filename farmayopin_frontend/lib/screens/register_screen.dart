@@ -1,12 +1,9 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
+import '../controladores/controlador_general.dart';
 import '../widgets/wave_background.dart';
 
-// StatefulWidget representa una pantalla con datos que pueden cambiar.
-// Su clase State guarda esos datos y construye la interfaz.
+// Esta vista dibuja widgets. Las acciones y validaciones están en el controlador.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -15,167 +12,46 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // En Dart, el prefijo _ hace que un miembro sea privado al archivo.
-  // La clave permite validar el formulario; los controllers leen los inputs.
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  bool _hidePassword = true;
-  bool _hideConfirmPassword = true;
-  bool _isSubmitting = false;
+  final controlador = ControladorGeneral();
 
-  // Libera los controllers cuando se cierra la pantalla (similar a Dispose).
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    controlador.dispose();
     super.dispose();
   }
 
-  void _showMessage(String message, {bool isError = false}) {
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red.shade700 : null,
-      ),
-    );
-  }
-
-  // Future<void> es similar a Task en C#: async/await espera la respuesta HTTP.
-  Future<void> _submitRegistration() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-
-    // setState avisa a Flutter que debe actualizar la interfaz.
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    try {
-      final body = {
-        'Nombre': name,
-        'Correo': email,
-        'Pass': password,
-        'Imagen': '',
-      };
-
-      final response = await _registerClient(body);
-
-      // Después del await, la pantalla podría haberse cerrado.
-      if (!mounted) return;
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        _showMessage('Usuario registrado correctamente.');
-        _goBack();
-      } else {
-        final data = response.body.isNotEmpty
-            ? _decodeResponse(response.body)
-            : {'mensaje': 'No se pudo registrar el usuario.'};
-        final message = data['mensaje'] ?? 'No se pudo registrar el usuario.';
-        _showMessage(message, isError: true);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      _showMessage(
-        'No se pudo conectar con el servidor. Revisá que el backend esté corriendo.',
-        isError: true,
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
-    }
-  }
-
-  Future<http.Response> _registerClient(Map<String, String> payload) async {
-    return http.post(
-      Uri.parse('http://localhost:5206/api/controladorGeneral/nuevoCliente'),
-      headers: {'Content-Type': 'application/json; charset=UTF-8'},
-      body: jsonEncode(payload),
-    );
-  }
-
-  Map<String, dynamic> _decodeResponse(String body) {
-    try {
-      return jsonDecode(body) as Map<String, dynamic>;
-    } catch (_) {
-      return {'mensaje': body};
-    }
-  }
-
-  // Un validator devuelve un mensaje de error, o null si el valor es válido.
-  // String? equivale a un string que admite null, como string? en C#.
-  String? _validateName(String? value) {
-    final name = value?.trim() ?? '';
-    if (name.isEmpty) return 'Ingresá tu nombre completo.';
-    if (name.length < 2) return 'El nombre es demasiado corto.';
-    return null;
-  }
-
-  String? _validateEmail(String? value) {
-    final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Ingresá tu correo electrónico.';
-    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
-      return 'Ingresá un correo válido.';
-    }
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    final password = value ?? '';
-    if (password.isEmpty) return 'Ingresá una contraseña.';
-    if (password.length < 6) {
-      return 'La contraseña debe tener al menos 6 caracteres.';
-    }
-    return null;
-  }
-
-  String? _validateConfirmPassword(String? value) {
-    final confirm = value ?? '';
-    if (confirm.isEmpty) return 'Confirmá tu contraseña.';
-    if (confirm != _passwordController.text) {
-      return 'Las contraseñas no coinciden.';
-    }
-    return null;
-  }
-
-  // build describe la interfaz: cada Widget cumple el rol de un elemento HTML.
-  // Las propiedades de estilo y espaciado cumplen un rol parecido al CSS.
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Registro'), centerTitle: true),
-      body: WaveBackground(
-        showTopWave: false,
-        child: SafeArea(
-          child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: _buildRegistrationForm(),
+    // Escucha notifyListeners del controlador y actualiza la presentación.
+    return ListenableBuilder(
+      listenable: controlador,
+      builder: (context, child) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('Registro'), centerTitle: true),
+          body: WaveBackground(
+            showTopWave: false,
+            child: SafeArea(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.all(24),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 480),
+                    child: _buildRegistrationForm(),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Widget _buildRegistrationForm() {
     return Form(
-      key: _formKey,
+      key: controlador.formKey,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       // Column ordena sus children verticalmente, como flex-direction: column.
       child: Column(
@@ -205,7 +81,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SizedBox(height: 28),
           _buildSubmitButton(),
           const SizedBox(height: 18),
-          TextButton(onPressed: _goBack, child: const Text('Ya tengo cuenta')),
+          TextButton(
+            onPressed: () => controlador.volver(context),
+            child: const Text('Ya tengo cuenta'),
+          ),
         ],
       ),
     );
@@ -234,82 +113,76 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildNameField() {
     return TextFormField(
-      controller: _nameController,
+      controller: controlador.nombreController,
       textInputAction: TextInputAction.next,
       decoration: const InputDecoration(hintText: 'Ingrese su nombre'),
-      validator: _validateName,
+      validator: controlador.validarNombre,
     );
   }
 
   Widget _buildEmailField() {
     return TextFormField(
-      controller: _emailController,
+      controller: controlador.correoController,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       autocorrect: false,
       decoration: const InputDecoration(hintText: 'ejemplo@correo.com'),
-      validator: _validateEmail,
+      validator: controlador.validarCorreo,
     );
   }
 
   Widget _buildPasswordField() {
     return TextFormField(
-      controller: _passwordController,
-      obscureText: _hidePassword,
+      controller: controlador.passwordController,
+      obscureText: controlador.ocultarPassword,
       enableSuggestions: false,
       autocorrect: false,
       textInputAction: TextInputAction.next,
       decoration: InputDecoration(
         hintText: 'Ingresá tu contraseña',
         suffixIcon: IconButton(
-          onPressed: () {
-            setState(() {
-              _hidePassword = !_hidePassword;
-            });
-          },
+          onPressed: controlador.alternarPassword,
           icon: Icon(
-            _hidePassword
+            controlador.ocultarPassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
           ),
         ),
       ),
-      validator: _validatePassword,
+      validator: controlador.validarPasswordRegistro,
     );
   }
 
   Widget _buildConfirmPasswordField() {
     return TextFormField(
-      controller: _confirmPasswordController,
-      obscureText: _hideConfirmPassword,
+      controller: controlador.confirmacionController,
+      obscureText: controlador.ocultarConfirmacion,
       enableSuggestions: false,
       autocorrect: false,
       textInputAction: TextInputAction.done,
-      onFieldSubmitted: (_) => _submitRegistration(),
+      onFieldSubmitted: (_) => controlador.registrarCliente(context),
       decoration: InputDecoration(
         hintText: 'Repetí la contraseña',
         suffixIcon: IconButton(
-          onPressed: () {
-            setState(() {
-              _hideConfirmPassword = !_hideConfirmPassword;
-            });
-          },
+          onPressed: controlador.alternarConfirmacion,
           icon: Icon(
-            _hideConfirmPassword
+            controlador.ocultarConfirmacion
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
           ),
         ),
       ),
-      validator: _validateConfirmPassword,
+      validator: controlador.validarConfirmacion,
     );
   }
 
   Widget _buildSubmitButton() {
     return FilledButton(
       // Un callback null deshabilita el botón mientras se envía la solicitud.
-      onPressed: _isSubmitting ? null : _submitRegistration,
-      child: _isSubmitting
+      onPressed: controlador.enviando
+          ? null
+          : () => controlador.registrarCliente(context),
+      child: controlador.enviando
           ? const SizedBox(
               width: 18,
               height: 18,
@@ -320,10 +193,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             )
           : const Text('Registrarme'),
     );
-  }
-
-  void _goBack() {
-    Navigator.of(context).pop();
   }
 }
 

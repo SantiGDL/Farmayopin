@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-import 'crear_producto_screen.dart';
-import 'login_screen.dart';
+import '../controladores/controlador_admin.dart';
 
 // Esta pantalla no tiene datos que cambien: por eso usa StatelessWidget.
 // Para leerla, empezá por build y seguí los métodos de cada sección.
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
 
+  final controlador = const ControladorAdmin();
+
   // Equivalen a variables de CSS: los estilos compartidos se definen una vez.
   static const _bannerColor = Color(0xFF50BDB5);
-  static const _iconBackground = Color(0xFF8BE1BD);
   static const _secondaryText = Color(0xFF929299);
   static const _iconsPath =
       'assets/Admin_PantallaPrincipal/IconosPantallaPrincipalAdmin';
@@ -74,7 +74,7 @@ class AdminHomeScreen extends StatelessWidget {
             ],
           ),
           TextButton.icon(
-            onPressed: () => _logout(context),
+            onPressed: () => controlador.cerrarSesion(context),
             icon: const Icon(Icons.logout, size: 26),
             label: const Text('Cerrar sesión'),
             style: TextButton.styleFrom(
@@ -167,28 +167,31 @@ class AdminHomeScreen extends StatelessWidget {
               title: 'Listar productos',
               description: 'Ver todos los productos registrados en el sistema.',
               iconFile: 'IconoListarProductos.png',
-              onTap: () => _showPendingFeature(context, 'Listar productos'),
+              onTap: () =>
+                  controlador.mostrarPendiente(context, 'Listar productos'),
             ),
             _buildProductCard(
               width: cardWidth,
               title: 'Crear producto',
               description: 'Agregar nuevos productos al inventario.',
               iconFile: 'IconoCrearProducto.png',
-              onTap: () => _openCreateProduct(context),
+              onTap: () => controlador.abrirCrearProducto(context),
             ),
             _buildProductCard(
               width: cardWidth,
               title: 'Ver producto',
               description: 'Ver información detallada del producto.',
               iconFile: 'IconoVerProducto.png',
-              onTap: () => _showPendingFeature(context, 'Ver producto'),
+              onTap: () =>
+                  controlador.mostrarPendiente(context, 'Ver producto'),
             ),
             _buildProductCard(
               width: cardWidth,
               title: 'Editar producto',
               description: 'Modificar la información de productos existentes.',
               iconFile: 'IconoEditarProducto.png',
-              onTap: () => _showPendingFeature(context, 'Editar producto'),
+              onTap: () =>
+                  controlador.mostrarPendiente(context, 'Editar producto'),
             ),
           ],
         );
@@ -232,14 +235,15 @@ class AdminHomeScreen extends StatelessWidget {
 
   Widget _buildPurchaseHistoryCard(BuildContext context) {
     return _buildMenuCard(
-      onTap: () => _showPendingFeature(context, 'Histórico de compras'),
+      onTap: () =>
+          controlador.mostrarPendiente(context, 'Histórico de compras'),
       child: Row(
         children: [
           Image.asset(
             '$_iconsPath/IconoHistoricoDeCompra1Prod.png',
             width: 66,
             height: 66,
-          ), 
+          ),
           const SizedBox(width: 8),
           const Expanded(
             child: Column(
@@ -291,29 +295,6 @@ class AdminHomeScreen extends StatelessWidget {
       radius: 16,
       backgroundColor: Color(0xFFD9D9D9),
       child: Icon(Icons.chevron_right, color: Colors.black, size: 30),
-    );
-  }
-
-  void _openCreateProduct(BuildContext context) {
-    // push abre otra pantalla; pop permite volver al panel.
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const CrearProductoScreen()));
-  }
-
-  void _showPendingFeature(BuildContext context, String feature) {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(content: Text('$feature todavía no está disponible.')),
-    );
-  }
-
-  void _logout(BuildContext context) {
-    // Por ahora solo vuelve al login y limpia la navegación.
-    // Al integrar autenticación, también habrá que borrar la sesión guardada.
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
     );
   }
 }
