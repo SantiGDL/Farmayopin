@@ -48,5 +48,6 @@ else
 
 aplicacion.UseCors("FlutterDev");
 aplicacion.UseAuthorization();
+aplicacion.UseStaticFiles();
 aplicacion.MapControllers();
 aplicacion.Run();

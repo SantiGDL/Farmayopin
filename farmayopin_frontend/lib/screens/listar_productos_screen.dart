@@ -2,20 +2,24 @@ import 'package:flutter/material.dart';
 
 import '../controladores/controlador_admin.dart';
 import '../dtos/producto_listado.dart';
+import '../config/api_config.dart';
 
-// La vista guarda la selección visual. El controlador carga y filtra los datos.
+//ListarProductosScreen define el widget y recibe su configuración.
 class ListarProductosScreen extends StatefulWidget {
-  const ListarProductosScreen({super.key});
+  const ListarProductosScreen({super.key}); //Constructor
 
   @override
   State<ListarProductosScreen> createState() {
     return _ListarProductosScreenState();
   }
 }
-
+//_ListarProductosScreenState guarda los datos cambiantes y su build() construye toda la interfaz, incluyendo títulos, botones y productos.
 class _ListarProductosScreenState extends State<ListarProductosScreen> {
-  final ControladorAdmin controlador = const ControladorAdmin();
-  late final List<ProductoListado> productos;
+  //Variables
+  final ControladorAdmin controladorAdmin = const ControladorAdmin();
+  List<ProductoListado> productos = [];
+  bool cargando = true;
+  String? errorCarga;
   String busqueda = '';
   String categoria = 'Todos';
   static const Color turquesa = Color(0xFF50BDB5);
@@ -24,16 +28,34 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   @override
   void initState() {
     super.initState();
-    productos = controlador.cargarProductosEjemplo();
+    _cargarProductos();
   }
 
+  //Metodo para Cargar la lista de productos en el Atributo de la pantalla 
+  Future<void> _cargarProductos() async 
+  {
+    try 
+    {
+      //Llamo al Controlador para Obtener la lista de Productos
+      final List<ProductoListado> productosRecibidos = await controladorAdmin.cargarProductosPantalla();
+
+      if (!mounted) return;
+
+      setState(() {productos = productosRecibidos; cargando = false; errorCarga = null;});
+    } catch (error) 
+    {
+      if (!mounted) return;
+
+      setState(() {errorCarga = 'No se pudieron cargar los productos.';cargando = false;});
+    }
+  }
+
+
+  // Construye la pantalla con los productos que coinciden con la búsqueda y la categoría.
   @override
-  Widget build(BuildContext context) {
-    final List<ProductoListado> visibles = controlador.filtrarProductos(
-      productos,
-      busqueda,
-      categoria,
-    );
+  Widget build(BuildContext context)
+  {
+    final List<ProductoListado> visibles = controladorAdmin.filtrarProductos(productos, busqueda, categoria);
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -48,7 +70,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
-                      onPressed: () => controlador.volverAlMenu(context),
+                      onPressed: () => controladorAdmin.volverAlMenu(context),
                       icon: const Icon(Icons.arrow_back),
                       label: const Text('Volver'),
                     ),
@@ -56,14 +78,9 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
                   _presentacion(),
                   const SizedBox(height: 22),
                   _buscador(),
-                  const SizedBox(height: 20),
-                  _filtros(),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Productos de ejemplo',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
+                  // Pendiente: habilitar cuando el backend devuelva la categoría.
+                  // const SizedBox(height: 20),
+                  // _filtros(),
                   const SizedBox(height: 12),
                   if (visibles.isEmpty)
                     const Padding(
@@ -87,7 +104,9 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     );
   }
 
-  Widget _encabezado() {
+  // Muestra el logo, el rol de administrador y el botón para cerrar sesión.
+  Widget _encabezado()
+  {
     return Wrap(
       alignment: WrapAlignment.spaceBetween,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -113,7 +132,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
           ],
         ),
         TextButton.icon(
-          onPressed: () => controlador.cerrarSesion(context),
+          onPressed: () => controladorAdmin.cerrarSesion(context),
           icon: const Icon(Icons.logout),
           label: const Text('Cerrar sesión'),
           style: TextButton.styleFrom(
@@ -125,7 +144,9 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     );
   }
 
-  Widget _presentacion() {
+  // Muestra el título del listado, su descripción y la ilustración del administrador.
+  Widget _presentacion()
+  {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 7),
       padding: const EdgeInsets.all(18),
@@ -173,15 +194,16 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     );
   }
 
-  Widget _buscador() {
+  // Construye el campo de búsqueda y actualiza el texto usado para filtrar los productos.
+  Widget _buscador()
+  {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: TextField(
-        onChanged: (String texto) {
+        onChanged: (String texto)
+        {
           // Solo actualizamos la presentación; el filtrado está en el controlador.
-          setState(() {
-            busqueda = texto;
-          });
+          setState(() {busqueda = texto;});
         },
         decoration: const InputDecoration(
           hintText: 'Buscar productos...',
@@ -193,7 +215,11 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     );
   }
 
-  Widget _filtros() {
+  // Pendiente: habilitar cuando el backend devuelva la categoría.
+  /*
+  // Construye los botones de categorías y guarda la categoría seleccionada.
+  Widget _filtros()
+  {
     return Wrap(
       alignment: WrapAlignment.center,
       spacing: 12,
@@ -207,17 +233,20 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
             selectedColor: const Color(0xFFD3FDF0),
             side: const BorderSide(color: turquesa),
             shape: const StadiumBorder(),
-            onSelected: (bool seleccionado) {
-              setState(() {
-                categoria = opcion;
-              });
+            onSelected: (bool seleccionado)
+            {
+              setState(() {categoria = opcion;});
             },
           ),
       ],
     );
   }
 
-  Widget _filaProducto(ProductoListado producto) {
+  */
+
+  // Organiza los datos y las acciones del producto según el espacio disponible.
+  Widget _filaProducto(ProductoListado producto)
+  {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -226,13 +255,13 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: LayoutBuilder(
-        builder: (context, constraints) {
-          final bool compacto =
-              constraints.maxWidth < 330 ||
-              MediaQuery.textScalerOf(context).scale(14) > 18;
+        builder: (context, constraints)
+        {
+          final bool compacto = constraints.maxWidth < 330 || MediaQuery.textScalerOf(context).scale(14) > 18;
           final Widget detalle = _detalleProducto(producto);
           // Con poco ancho, las acciones bajan de fila para no cortar textos.
-          if (compacto) {
+          if (compacto)
+          {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -257,24 +286,43 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     );
   }
 
-  Widget _detalleProducto(ProductoListado producto) {
+  // Obtiene la imagen del backend usando la ruta base y la FotoUrl del producto.
+  Widget _imagenProducto(ProductoListado producto)
+  {
+    final String ruta = producto.fotoUrl?.trim() ?? '';
+    final Widget imagenRespaldo = Image.asset(
+      'assets/images/producto_default.png',
+      width: 64,
+      height: 80,
+      fit: BoxFit.contain,
+    );
+
+    // Los registros sin foto o con rutas antiguas de assets usan la imagen predeterminada.
+    if (ruta.isEmpty || ruta.startsWith('assets/'))
+    {
+      return imagenRespaldo;
+    }
+
+    return Image.network(
+      ApiConfig.uri(ruta).toString(),
+      width: 64,
+      height: 80,
+      fit: BoxFit.contain,
+      semanticLabel: producto.nombre,
+      errorBuilder: (context, error, stackTrace)
+      {
+        return imagenRespaldo;
+      },
+    );
+  }
+
+  // Muestra la imagen, el nombre, la descripción, el precio y el stock del producto.
+  Widget _detalleProducto(ProductoListado producto)
+  {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // No hay fotos individuales en assets; el ícono indica su lugar.
-        Container(
-          width: 64,
-          height: 80,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF0F0F0),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(
-            Icons.medication_outlined,
-            color: turquesa,
-            size: 42,
-          ),
-        ),
+        _imagenProducto(producto),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -313,23 +361,29 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     );
   }
 
-  Widget _ver(ProductoListado producto) {
+  // Construye el botón que solicita al controlador abrir el detalle del producto.
+  Widget _ver(ProductoListado producto)
+  {
     return _accion(
       'Ver',
       'IconoOjo_ListarProductos.png',
-      () => controlador.verProducto(context, producto),
+      () => controladorAdmin.verProducto(context, producto),
     );
   }
 
-  Widget _editar(ProductoListado producto) {
+  // Construye el botón que llama a la acción de editar del controlador.
+  Widget _editar(ProductoListado producto)
+  {
     return _accion(
       'Editar',
       'IconoLapis_ListarProductos.png',
-      () => controlador.editarProducto(context, producto),
+      () => controladorAdmin.editarProducto(context, producto),
     );
   }
 
-  Widget _accion(String titulo, String archivo, VoidCallback accion) {
+  // Construye un botón reutilizable con texto, un ícono y la acción que ejecutará al pulsarlo.
+  Widget _accion(String titulo, String archivo, VoidCallback accion)
+  {
     return TextButton.icon(
       onPressed: accion,
       icon: Image.asset(

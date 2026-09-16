@@ -78,4 +78,27 @@ public class ControladorAdmin : ControllerBase
             return StatusCode(500, new { mensaje = "No se pudo editar el producto." });
         }
     }
+
+
+    [HttpGet ("listarProductos")]
+    public IActionResult ListarProductos()
+    {
+        try
+        {
+            List<ProductoDTO> ListaProductos = _servicioAdmin.ListarProductos();
+
+            return Ok(ListaProductos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al listar los productos");
+
+            return StatusCode(500, new
+            {
+                mensaje = "No se pudieron obtener los productos."
+            });
+        }
+    }
+
+
 }
