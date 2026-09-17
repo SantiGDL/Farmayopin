@@ -6,6 +6,18 @@ import 'package:http/testing.dart';
 import 'package:farmayopin_frontend/servicios/servicio_general.dart';
 
 void main() {
+  test('Login conserva el rol y recibe el token para consultar el carrito', () async {
+    final servicio = ServicioGeneral(cliente: MockClient((request) async {
+      expect(request.url.path, '/api/controladorGeneral/consultarRolUsuario');
+      return http.Response('{"rol":"Cliente","token":"token-cliente"}', 200);
+    }));
+    addTearDown(servicio.dispose);
+    final resultado = await servicio.iniciarSesion('ana@example.com', 'prueba123');
+    expect(resultado.exito, isTrue);
+    expect(resultado.rol, 'Cliente');
+    expect(resultado.token, 'token-cliente');
+  });
+
   test('Registro envía el contrato del backend y acepta 200 y 201', () async {
     for (final status in [200, 201]) {
       final servicio = ServicioGeneral(

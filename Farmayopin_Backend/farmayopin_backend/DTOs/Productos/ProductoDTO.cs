@@ -13,8 +13,11 @@ public class ProductoDTO
     public decimal Precio { get; set; }
     public string? FotoUrl { get; set; }
     public int Stock { get; set; }
+    public string? Categoria { get; set; }
+    public string? Unidad { get; set; }
 
-    public ProductoDTO(int id, string codigo, string nombre, string detalle, decimal precio, string? fotoUrl, int stock)
+    public ProductoDTO(int id, string codigo, string nombre, string detalle, decimal precio, string? fotoUrl, int stock,
+        string? categoria = null, string? unidad = null)
     {
         this.Id = id;
         this.Codigo = codigo;
@@ -23,6 +26,8 @@ public class ProductoDTO
         this.Precio = precio;
         this.FotoUrl = fotoUrl;
         this.Stock = stock;
+        this.Categoria = categoria;
+        this.Unidad = unidad;
     }
 
 }

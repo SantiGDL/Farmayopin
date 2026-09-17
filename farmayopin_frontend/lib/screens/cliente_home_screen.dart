@@ -4,9 +4,9 @@ import '../controladores/controlador_cliente.dart';
 
 // La pantalla dibuja. El controlador recibe las acciones de los botones.
 class ClienteHomeScreen extends StatelessWidget {
-  const ClienteHomeScreen({super.key});
+  const ClienteHomeScreen({super.key, this.controlador = const ControladorCliente()});
 
-  final ControladorCliente controlador = const ControladorCliente();
+  final ControladorCliente controlador;
   static const String _iconos = 'assets/Iconos';
   static const Color _turquesa = Color(0xFF50BDB5);
   static const Color _textoSecundario = Color(0xFF929299);

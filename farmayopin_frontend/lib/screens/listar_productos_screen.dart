@@ -3,20 +3,32 @@ import 'package:flutter/material.dart';
 import '../controladores/controlador_admin.dart';
 import '../dtos/producto_listado.dart';
 import '../config/api_config.dart';
+import '../controladores/controlador_cliente.dart';
+import '../widgets/productos_cliente_widgets.dart';
 
 //ListarProductosScreen define el widget y recibe su configuración.
 class ListarProductosScreen extends StatefulWidget {
-  const ListarProductosScreen({super.key}); //Constructor
+  const ListarProductosScreen({
+    super.key,
+    this.esCliente = false,
+    this.controladorAdmin = const ControladorAdmin(),
+    this.controladorCliente = const ControladorCliente(),
+  });
+
+  final bool esCliente;
+  final ControladorAdmin controladorAdmin;
+  final ControladorCliente controladorCliente;
 
   @override
   State<ListarProductosScreen> createState() {
     return _ListarProductosScreenState();
   }
 }
+
 //_ListarProductosScreenState guarda los datos cambiantes y su build() construye toda la interfaz, incluyendo títulos, botones y productos.
 class _ListarProductosScreenState extends State<ListarProductosScreen> {
   //Variables
-  final ControladorAdmin controladorAdmin = const ControladorAdmin();
+  ControladorAdmin get controladorAdmin => widget.controladorAdmin;
   List<ProductoListado> productos = [];
   bool cargando = true;
   String? errorCarga;
@@ -31,31 +43,55 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     _cargarProductos();
   }
 
-  //Metodo para Cargar la lista de productos en el Atributo de la pantalla 
-  Future<void> _cargarProductos() async 
-  {
-    try 
-    {
+  //Metodo para Cargar la lista de productos en el Atributo de la pantalla
+  Future<void> _cargarProductos() async {
+    setState(() {
+      cargando = true;
+      errorCarga = null;
+    });
+    try {
       //Llamo al Controlador para Obtener la lista de Productos
-      final List<ProductoListado> productosRecibidos = await controladorAdmin.cargarProductosPantalla();
+      final List<ProductoListado> productosRecibidos;
+      if (widget.esCliente) {
+        productosRecibidos = await widget.controladorCliente.listarProductos();
+      } else {
+        productosRecibidos = await controladorAdmin.cargarProductosPantalla();
+      }
 
       if (!mounted) return;
 
-      setState(() {productos = productosRecibidos; cargando = false; errorCarga = null;});
-    } catch (error) 
-    {
+      setState(() {
+        productos = productosRecibidos;
+        cargando = false;
+        errorCarga = null;
+      });
+    } catch (error) {
       if (!mounted) return;
 
-      setState(() {errorCarga = 'No se pudieron cargar los productos.';cargando = false;});
+      setState(() {
+        errorCarga = 'No se pudieron cargar los productos.';
+        cargando = false;
+      });
     }
   }
 
-
   // Construye la pantalla con los productos que coinciden con la búsqueda y la categoría.
   @override
-  Widget build(BuildContext context)
-  {
-    final List<ProductoListado> visibles = controladorAdmin.filtrarProductos(productos, busqueda, categoria);
+  Widget build(BuildContext context) {
+    final List<ProductoListado> visibles;
+    if (widget.esCliente) {
+      visibles = widget.controladorCliente.filtrarProductos(
+        productos,
+        busqueda,
+        categoria,
+      );
+    } else {
+      visibles = controladorAdmin.filtrarProductos(
+        productos,
+        busqueda,
+        categoria,
+      );
+    }
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -67,22 +103,52 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _encabezado(),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => controladorAdmin.volverAlMenu(context),
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Volver'),
+                  if (!widget.esCliente)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => controladorAdmin.volverAlMenu(context),
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text('Volver'),
+                      ),
                     ),
-                  ),
-                  _presentacion(),
+                  if (widget.esCliente) ...[
+                    const SizedBox(height: 18),
+                    const PresentacionCliente(
+                      titulo: 'Explora los\nProductos',
+                      descripcion: 'Navegá nuestro catálogo de medicamentos, vitaminas y productos de cuidado personal con total confianza.',
+                    ),
+                  ] else
+                    _presentacion(),
                   const SizedBox(height: 22),
                   _buscador(),
-                  // Pendiente: habilitar cuando el backend devuelva la categoría.
-                  // const SizedBox(height: 20),
-                  // _filtros(),
                   const SizedBox(height: 12),
-                  if (visibles.isEmpty)
+                  FiltrosProductos(
+                    productos: productos,
+                    categoria: categoria,
+                    alSeleccionar: (String seleccionada) {
+                      setState(() {
+                        categoria = seleccionada;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  if (cargando)
+                    const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (errorCarga != null)
+                    Column(
+                      children: [
+                        Text(errorCarga!, textAlign: TextAlign.center),
+                        TextButton(
+                          onPressed: _cargarProductos,
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    )
+                  else if (visibles.isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(24),
                       child: Text(
@@ -90,11 +156,35 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                  for (final ProductoListado producto in visibles)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 18),
-                      child: _filaProducto(producto),
+                  if (!cargando && errorCarga == null)
+                    for (final ProductoListado producto in visibles)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 18),
+                        child: widget.esCliente
+                            ? _filaCliente(producto)
+                            : _filaProducto(producto),
+                      ),
+                  if (widget.esCliente) ...[
+                    const SizedBox(height: 32),
+                    Center(
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          widget.controladorCliente.verCarrito(context);
+                        },
+                        icon: const Icon(
+                          Icons.shopping_cart_outlined,
+                          size: 20,
+                        ),
+                        label: const Text('Ver carrito'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF008F8A),
+                          minimumSize: const Size(130, 36),
+                          textStyle: const TextStyle(fontSize: 12),
+                          shape: const StadiumBorder(),
+                        ),
+                      ),
                     ),
+                  ],
                 ],
               ),
             ),
@@ -105,8 +195,14 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   }
 
   // Muestra el logo, el rol de administrador y el botón para cerrar sesión.
-  Widget _encabezado()
-  {
+  Widget _encabezado() {
+    if (widget.esCliente) {
+      return EncabezadoCliente(
+        cerrarSesion: () {
+          widget.controladorCliente.cerrarSesion(context);
+        },
+      );
+    }
     return Wrap(
       alignment: WrapAlignment.spaceBetween,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -145,8 +241,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   }
 
   // Muestra el título del listado, su descripción y la ilustración del administrador.
-  Widget _presentacion()
-  {
+  Widget _presentacion() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 7),
       padding: const EdgeInsets.all(18),
@@ -195,15 +290,24 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   }
 
   // Construye el campo de búsqueda y actualiza el texto usado para filtrar los productos.
-  Widget _buscador()
-  {
+  Widget _buscador() {
+    if (widget.esCliente) {
+      return BuscadorProductos(
+        alCambiar: (String texto) {
+          setState(() {
+            busqueda = texto;
+          });
+        },
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: TextField(
-        onChanged: (String texto)
-        {
+        onChanged: (String texto) {
           // Solo actualizamos la presentación; el filtrado está en el controlador.
-          setState(() {busqueda = texto;});
+          setState(() {
+            busqueda = texto;
+          });
         },
         decoration: const InputDecoration(
           hintText: 'Buscar productos...',
@@ -215,38 +319,52 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     );
   }
 
-  // Pendiente: habilitar cuando el backend devuelva la categoría.
-  /*
-  // Construye los botones de categorías y guarda la categoría seleccionada.
-  Widget _filtros()
-  {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 12,
-      children: [
-        for (final String opcion in ['Todos', 'Medicamentos', 'Vitaminas'])
-          ChoiceChip(
-            label: Text(opcion, style: const TextStyle(fontSize: 12)),
-            selected: categoria == opcion,
-            showCheckmark: false,
-            backgroundColor: Colors.white,
-            selectedColor: const Color(0xFFD3FDF0),
-            side: const BorderSide(color: turquesa),
-            shape: const StadiumBorder(),
-            onSelected: (bool seleccionado)
-            {
-              setState(() {categoria = opcion;});
+  Widget _filaCliente(ProductoListado producto) {
+    return TarjetaProductoCliente(
+      producto: producto,
+      acciones: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextButton.icon(
+            onPressed: () {
+              widget.controladorCliente.verProducto(context, producto);
             },
+            icon: const Icon(Icons.visibility_outlined, size: 20),
+            label: const Text('Ver'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.black,
+              textStyle: const TextStyle(fontSize: 10),
+              minimumSize: const Size(64, 28),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
           ),
-      ],
+          TextButton.icon(
+            onPressed: () {
+              widget.controladorCliente.mostrarPendiente(
+                context,
+                'Agregar al carrito',
+              );
+            },
+            icon: const Icon(Icons.add_shopping_cart, size: 17),
+            label: const Text('Agregar'),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF168E88),
+              backgroundColor: const Color(0xFFB9E8E5),
+              textStyle: const TextStyle(fontSize: 10),
+              minimumSize: const Size(64, 24),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: const StadiumBorder(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  */
-
   // Organiza los datos y las acciones del producto según el espacio disponible.
-  Widget _filaProducto(ProductoListado producto)
-  {
+  Widget _filaProducto(ProductoListado producto) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -255,13 +373,13 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: LayoutBuilder(
-        builder: (context, constraints)
-        {
-          final bool compacto = constraints.maxWidth < 330 || MediaQuery.textScalerOf(context).scale(14) > 18;
+        builder: (context, constraints) {
+          final bool compacto =
+              constraints.maxWidth < 330 ||
+              MediaQuery.textScalerOf(context).scale(14) > 18;
           final Widget detalle = _detalleProducto(producto);
           // Con poco ancho, las acciones bajan de fila para no cortar textos.
-          if (compacto)
-          {
+          if (compacto) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -287,8 +405,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   }
 
   // Obtiene la imagen del backend usando la ruta base y la FotoUrl del producto.
-  Widget _imagenProducto(ProductoListado producto)
-  {
+  Widget _imagenProducto(ProductoListado producto) {
     final String ruta = producto.fotoUrl?.trim() ?? '';
     final Widget imagenRespaldo = Image.asset(
       'assets/images/producto_default.png',
@@ -298,8 +415,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     );
 
     // Los registros sin foto o con rutas antiguas de assets usan la imagen predeterminada.
-    if (ruta.isEmpty || ruta.startsWith('assets/'))
-    {
+    if (ruta.isEmpty || ruta.startsWith('assets/')) {
       return imagenRespaldo;
     }
 
@@ -309,16 +425,14 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
       height: 80,
       fit: BoxFit.contain,
       semanticLabel: producto.nombre,
-      errorBuilder: (context, error, stackTrace)
-      {
+      errorBuilder: (context, error, stackTrace) {
         return imagenRespaldo;
       },
     );
   }
 
   // Muestra la imagen, el nombre, la descripción, el precio y el stock del producto.
-  Widget _detalleProducto(ProductoListado producto)
-  {
+  Widget _detalleProducto(ProductoListado producto) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -362,8 +476,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   }
 
   // Construye el botón que solicita al controlador abrir el detalle del producto.
-  Widget _ver(ProductoListado producto)
-  {
+  Widget _ver(ProductoListado producto) {
     return _accion(
       'Ver',
       'IconoOjo_ListarProductos.png',
@@ -372,8 +485,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   }
 
   // Construye el botón que llama a la acción de editar del controlador.
-  Widget _editar(ProductoListado producto)
-  {
+  Widget _editar(ProductoListado producto) {
     return _accion(
       'Editar',
       'IconoLapis_ListarProductos.png',
@@ -382,8 +494,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   }
 
   // Construye un botón reutilizable con texto, un ícono y la acción que ejecutará al pulsarlo.
-  Widget _accion(String titulo, String archivo, VoidCallback accion)
-  {
+  Widget _accion(String titulo, String archivo, VoidCallback accion) {
     return TextButton.icon(
       onPressed: accion,
       icon: Image.asset(

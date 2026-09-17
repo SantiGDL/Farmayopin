@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../servicios/servicio_general.dart';
+import '../servicios/sesion_cliente.dart';
 import '../screens/register_screen.dart';
 import '../screens/login_screen.dart';
 import '../dtos/resultado_iniciar_sesion.dart';
@@ -68,6 +69,7 @@ class ControladorGeneral extends ChangeNotifier {
     }
 
     if (resultado.rol == 'Admin') {
+      SesionCliente.cerrar();
       Navigator.of(referenciaPantalla).pushReplacement(   //Desde la pantalla actual reemplazo:
         MaterialPageRoute(                                //defino ruta de pantalla de reemplazo
           builder: (context) 
@@ -79,6 +81,7 @@ class ControladorGeneral extends ChangeNotifier {
     }
 
     if (resultado.rol == 'Cliente') {
+      SesionCliente.token = resultado.token;
       Navigator.of(referenciaPantalla).pushReplacement(
         MaterialPageRoute(builder: (context) {
           return const ClienteHomeScreen();
@@ -125,7 +128,7 @@ class ControladorGeneral extends ChangeNotifier {
   }
 
   static void cerrarSesion(BuildContext context) {
-    // Solo navegación por ahora: todavía no hay una sesión/token que borrar.
+    SesionCliente.cerrar();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
