@@ -25,14 +25,8 @@ void main() {
       await tester.tap(find.byTooltip('Mostrar contraseña'));
       await tester.pump();
       expect(find.byTooltip('Ocultar contraseña'), findsOneWidget);
-      await tester.tap(find.text('Ingresar'));
-      await tester.pump();
-      expect(
-        find.text(
-          'Formulario válido. El inicio de sesión aún no está disponible.',
-        ),
-        findsOneWidget,
-      );
+      // El login ya consulta la API; su contrato se verifica con MockClient
+      // en servicio_general_test, sin enviar credenciales desde esta prueba visual.
       await tester.tap(find.text('Regístrate'));
       await tester.pumpAndSettle();
       expect(find.byType(RegisterScreen), findsOneWidget);

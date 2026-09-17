@@ -5,6 +5,7 @@ class ResultadoIniciarSesion {
     required this.exito,
     required this.mensaje,
     this.rol,
+    this.token,
   });
 
   final bool exito;
@@ -12,4 +13,5 @@ class ResultadoIniciarSesion {
 
   // El backend devuelve 'Admin' o 'Cliente'. En caso de error, será null.
   final String? rol;
+  final String? token;
 }

@@ -2,6 +2,7 @@ using farmayopin_backend.DTOs.Productos;
 using farmayopin_backend.Modelos;
 using farmayopin_backend.Persistencia;
 using farmayopin_backend.Servicios.Resultados;
+using Microsoft.EntityFrameworkCore;
 
 namespace farmayopin_backend.Servicios;
 
@@ -89,6 +90,7 @@ public class ServicioAdmin
     public List<ProductoDTO> ListarProductos()
     {
         var productos = _persistencia.Productos
+            .AsNoTracking()
             .OrderBy(producto => producto.Nombre)
             .ToList();
 
@@ -103,7 +105,9 @@ public class ServicioAdmin
                 producto.Detalle,
                 producto.Precio,
                 producto.FotoUrl,
-                producto.Stock
+                producto.Stock,
+                producto.Categoria?.ToString(),
+                producto.Unidad?.ToString()
             );
 
             listaProductosDTO.Add(productoDTO);

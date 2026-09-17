@@ -50,6 +50,14 @@ public class ServicioGeneral
 
     public ResultadoConsultarRolUsuario ConsultarRolUsuario(ConsultaRolDTO usuarioConsultado)
     {
+        return ConsultarRolUsuario(usuarioConsultado, out _);
+    }
+
+    // La sobrecarga conserva el contrato anterior y permite identificar al cliente
+    // autenticado sin consultar dos veces sus credenciales.
+    public ResultadoConsultarRolUsuario ConsultarRolUsuario(ConsultaRolDTO usuarioConsultado, out int? usuarioId)
+    {
+        usuarioId = null;
         //Obtengo el Usuario
         var consulta =
             from usuario in _persistencia.Usuarios
@@ -61,6 +69,7 @@ public class ServicioGeneral
         if (usuarioExistente == null) return ResultadoConsultarRolUsuario.NoExisteUsuario;
         
         if (usuarioExistente.Pass != usuarioConsultado.Pass) return ResultadoConsultarRolUsuario.PassNoCoincide;
+        usuarioId = usuarioExistente.Id;
         
         if (usuarioExistente.Rol == RolUsuario.Admin) return ResultadoConsultarRolUsuario.RolAdmin;
         
