@@ -1,6 +1,7 @@
 import 'package:farmayopin_frontend/dtos/carrito_cliente.dart';
 import 'package:farmayopin_frontend/dtos/producto_listado.dart';
 import 'package:farmayopin_frontend/dtos/compra_confirmada.dart';
+import 'package:farmayopin_frontend/dtos/resumen_compra.dart';
 import 'package:farmayopin_frontend/servicios/servicio_admin.dart';
 import 'package:farmayopin_frontend/servicios/servicio_cliente.dart';
 
@@ -57,6 +58,11 @@ class ServicioClientePrueba extends ServicioCliente {
   @override
   Future<CarritoCliente> verCarrito() async {
     return carrito;
+  }
+
+  @override
+  Future<List<ResumenCompra>> verHistorico() async {
+    return [];
   }
 }
 

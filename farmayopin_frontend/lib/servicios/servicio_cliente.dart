@@ -6,6 +6,8 @@ import '../config/api_config.dart';
 import '../dtos/carrito_cliente.dart';
 import '../dtos/compra_confirmada.dart';
 import '../dtos/producto_listado.dart';
+import '../dtos/resumen_compra.dart';
+import '../dtos/detalle_compra.dart';
 import 'sesion_cliente.dart';
 
 class ServicioCliente {
@@ -153,8 +155,32 @@ class ServicioCliente {
     }
   }
 
-  String verHistorico() {
-    return 'El histórico de compras todavía no está disponible.';
+  Future<List<ResumenCompra>> verHistorico() async {
+    final http.Response respuesta = await _solicitar(
+      'GET',
+      'compras',
+      true,
+      null,
+    );
+    final List<dynamic> datos =
+        jsonDecode(utf8.decode(respuesta.bodyBytes)) as List<dynamic>;
+    final List<ResumenCompra> compras = [];
+    for (final dynamic compra in datos) {
+      compras.add(ResumenCompra.fromJson(compra as Map<String, dynamic>));
+    }
+    return compras;
+  }
+
+  Future<DetalleCompra> obtenerDetalleCompra(int compraId) async {
+    final http.Response respuesta = await _solicitar(
+      'GET',
+      'compras/$compraId',
+      true,
+      null,
+    );
+    final Map<String, dynamic> datos =
+        jsonDecode(utf8.decode(respuesta.bodyBytes)) as Map<String, dynamic>;
+    return DetalleCompra.fromJson(datos);
   }
 }
 

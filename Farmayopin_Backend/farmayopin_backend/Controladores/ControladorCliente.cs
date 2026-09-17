@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using farmayopin_backend.DTOs.Carritos;
+using farmayopin_backend.DTOs.Compras;
 using farmayopin_backend.Servicios;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -69,6 +70,50 @@ public class ControladorCliente : ControllerBase
         {
             _logger.LogError(ex, "Error al consultar el carrito del cliente");
             return StatusCode(500, new { mensaje = "No se pudo obtener el carrito." });
+        }
+    }
+
+    [Authorize(Roles = "Cliente")]
+    [HttpGet("compras")]
+    public IActionResult ListarCompras()
+    {
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int usuarioId))
+        {
+            return Unauthorized(new { mensaje = "Volvé a iniciar sesión para ver tus compras." });
+        }
+        try
+        {
+            return Ok(_servicioCliente.ListarCompras(usuarioId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al consultar el histórico del cliente");
+            return StatusCode(500, new { mensaje = "No se pudieron obtener tus compras." });
+        }
+    }
+
+    [Authorize(Roles = "Cliente")]
+    [HttpGet("compras/{compraId:int}")]
+    public IActionResult ObtenerDetalleCompra(int compraId)
+    {
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int usuarioId))
+        {
+            return Unauthorized(new { mensaje = "Volvé a iniciar sesión para ver tus compras." });
+        }
+        try
+        {
+            DetalleCompraDTO? compra = _servicioCliente.ObtenerDetalleCompra(usuarioId, compraId);
+            if (compra == null)
+            {
+                // Misma respuesta para compras ajenas, inexistentes o no pagadas.
+                return NotFound(new { mensaje = "No se encontró esa compra en tu histórico." });
+            }
+            return Ok(compra);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al consultar el detalle de una compra del cliente");
+            return StatusCode(500, new { mensaje = "No se pudo obtener el detalle de la compra." });
         }
     }
 
