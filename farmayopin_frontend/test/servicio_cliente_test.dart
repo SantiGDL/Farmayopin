@@ -59,6 +59,7 @@ void main() {
           'total': 721,
         }),
         200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
       );
     });
     addTearDown(cliente.close);

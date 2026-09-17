@@ -71,4 +71,64 @@ public class ControladorCliente : ControllerBase
             return StatusCode(500, new { mensaje = "No se pudo obtener el carrito." });
         }
     }
+
+    [Authorize(Roles = "Cliente")]
+    [HttpPost("agregarProducto")]
+    public IActionResult AgregarProducto([FromBody] AgregarProductoCarritoDTO datos)
+    {
+        return EjecutarCambio(usuarioId => _servicioCliente.AgregarProducto(usuarioId, datos));
+    }
+
+    [Authorize(Roles = "Cliente")]
+    [HttpPut("lineas/{lineaId:int}")]
+    public IActionResult CambiarCantidad(int lineaId, [FromBody] CambiarCantidadCarritoDTO datos)
+    {
+        return EjecutarCambio(usuarioId => _servicioCliente.CambiarCantidad(usuarioId, lineaId, datos.Cantidad));
+    }
+
+    [Authorize(Roles = "Cliente")]
+    [HttpDelete("lineas/{lineaId:int}")]
+    public IActionResult EliminarLinea(int lineaId)
+    {
+        return EjecutarCambio(usuarioId => _servicioCliente.EliminarLinea(usuarioId, lineaId));
+    }
+
+    [Authorize(Roles = "Cliente")]
+    [HttpPost("confirmarCompra")]
+    public IActionResult ConfirmarCompra()
+    {
+        return EjecutarCambio(usuarioId => _servicioCliente.ConfirmarCompra(usuarioId));
+    }
+
+    // Los cuatro cambios usan la misma identidad y respuestas de error.
+    // Ningún DTO permite elegir un usuario o un carrito ajeno.
+    private IActionResult EjecutarCambio(Func<int, object> operacion)
+    {
+        string? identificador = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(identificador, out int usuarioId))
+        {
+            return Unauthorized(new { mensaje = "Volvé a iniciar sesión." });
+        }
+        try
+        {
+            return Ok(operacion(usuarioId));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { mensaje = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { mensaje = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { mensaje = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al modificar el carrito o confirmar la compra");
+            return StatusCode(500, new { mensaje = "No se pudo completar la operación. Actualizá el carrito antes de volver a intentarlo." });
+        }
+    }
 }

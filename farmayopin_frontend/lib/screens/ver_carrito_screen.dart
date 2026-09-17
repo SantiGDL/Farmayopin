@@ -23,6 +23,7 @@ class VerCarritoScreen extends StatefulWidget {
 class _VerCarritoScreenState extends State<VerCarritoScreen> {
   CarritoCliente? carrito;
   bool cargando = true;
+  bool guardando = false;
   bool sesionVencida = false;
   String? errorCarga;
   String busqueda = '';
@@ -35,6 +36,7 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
   }
 
   Future<void> _cargarCarrito() async {
+    if (guardando) return;
     setState(() {
       cargando = true;
       errorCarga = null;
@@ -98,10 +100,14 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
                         widget.controlador.cerrarSesion(context);
                       },
                     ),
-                    const SizedBox(height: 18),
+                    VolverCliente(
+                      volver: guardando
+                          ? null
+                          : () => widget.controlador.volver(context),
+                    ),
                     const PresentacionCliente(
                       titulo: 'Mi Carrito',
-                      descripcion: 'Revisá los productos que agregaste a tu carrito y consultá sus cantidades e importes.',
+                      descripcion: 'Revisá los productos que agregaste a tu carrito y editá las cantidades o eliminalos si lo necesitás.',
                     ),
                     const SizedBox(height: 22),
                     BuscadorProductos(
@@ -122,13 +128,16 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
                       },
                     ),
                     const SizedBox(height: 12),
+                    if (guardando) const LinearProgressIndicator(),
                     _contenido(),
                     const SizedBox(height: 18),
                     Center(
                       child: OutlinedButton.icon(
-                        onPressed: () {
-                          widget.controlador.seguirComprando(context);
-                        },
+                        onPressed: guardando
+                            ? null
+                            : () {
+                                widget.controlador.seguirComprando(context);
+                              },
                         icon: const Icon(Icons.arrow_back, color: Colors.black),
                         label: const Text('Seguir comprando'),
                         style: OutlinedButton.styleFrom(
@@ -218,13 +227,19 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
             ),
           ),
         // Buscar o filtrar no cambia los importes de todo el carrito.
-        _resumen(carritoActual),
+        ResumenCarritoCliente(carrito: carritoActual),
         const SizedBox(height: 14),
         Center(
           child: FilledButton.icon(
-            onPressed: () {
-              widget.controlador.mostrarPendiente(context, 'Pagar carrito');
-            },
+            onPressed: guardando
+                ? null
+                : () async {
+                    await widget.controlador.pagarCarrito(
+                      context,
+                      carritoActual,
+                    );
+                    if (mounted) await _cargarCarrito();
+                  },
             icon: const Icon(Icons.shopping_bag_outlined, size: 18),
             label: const Text('Pagar carrito'),
             style: FilledButton.styleFrom(
@@ -254,7 +269,9 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
               _botonCantidad(
                 Icons.remove,
                 'Disminuir cantidad',
-                'Cambiar cantidades',
+                linea.cantidad <= 1
+                    ? null
+                    : () => _cambiarCantidad(linea, linea.cantidad - 1),
               ),
               Semantics(
                 label:
@@ -267,7 +284,9 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
               _botonCantidad(
                 Icons.add,
                 'Aumentar cantidad',
-                'Cambiar cantidades',
+                linea.cantidad >= linea.producto.stock
+                    ? null
+                    : () => _cambiarCantidad(linea, linea.cantidad + 1),
               ),
             ],
           ),
@@ -275,21 +294,23 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
         _botonCantidad(
           Icons.delete_outline,
           'Eliminar producto',
-          'Eliminar del carrito',
+          () => _eliminar(linea),
         ),
       ],
     );
   }
 
-  Widget _botonCantidad(IconData icono, String descripcion, String funcion) {
+  Widget _botonCantidad(
+    IconData icono,
+    String descripcion,
+    VoidCallback? accion,
+  ) {
     Color color = const Color(0xFF199F98);
     if (icono == Icons.delete_outline) {
       color = Colors.redAccent;
     }
     return IconButton(
-      onPressed: () {
-        widget.controlador.mostrarPendiente(context, funcion);
-      },
+      onPressed: guardando ? null : accion,
       tooltip: descripcion,
       icon: Icon(icono, size: 18, color: color),
       padding: const EdgeInsets.all(3),
@@ -298,57 +319,38 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
     );
   }
 
-  Widget _resumen(CarritoCliente carritoActual) {
-    String envio = 'A confirmar';
-    String total = 'A confirmar';
-    if (carritoActual.envio != null) {
-      envio = formatearImporte(carritoActual.envio!);
-    }
-    if (carritoActual.total != null) {
-      total = formatearImporte(carritoActual.total!);
-    }
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFDFD),
-        border: Border.all(color: const Color(0xFFBBBBBB)),
-        borderRadius: BorderRadius.circular(9),
-      ),
-      child: Column(
-        children: [
-          _importe(
-            'Subtotal (${carritoActual.cantidadProductos} productos)',
-            formatearImporte(carritoActual.subtotal),
-            false,
-          ),
-          const SizedBox(height: 5),
-          _importe('Envío', envio, false),
-          const SizedBox(height: 12),
-          _importe('Total', total, true),
-        ],
-      ),
+  Future<void> _cambiarCantidad(LineaCarritoCliente linea, int cantidad) async {
+    await _guardarCambio(
+      () => widget.controlador.cambiarCantidad(linea.id, cantidad),
     );
   }
 
-  Widget _importe(String etiqueta, String valor, bool destacar) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            etiqueta,
-            style: TextStyle(
-              color: destacar ? Colors.black : const Color(0xFF168E88),
-              fontWeight: destacar ? FontWeight.bold : FontWeight.normal,
-              fontSize: 11,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          valor,
-          style: const TextStyle(fontSize: 11, color: Color(0xFF168E88)),
-        ),
-      ],
-    );
+  Future<void> _eliminar(LineaCarritoCliente linea) async {
+    await _guardarCambio(() => widget.controlador.eliminarLinea(linea.id));
+  }
+
+  Future<void> _guardarCambio(
+    Future<CarritoCliente> Function() operacion,
+  ) async {
+    if (guardando) return;
+    setState(() {
+      guardando = true;
+    });
+    try {
+      final CarritoCliente recibido = await operacion();
+      if (mounted) {
+        setState(() {
+          carrito = recibido;
+        });
+      }
+    } catch (error) {
+      if (mounted) widget.controlador.mostrarError(context, error);
+    } finally {
+      if (mounted) {
+        setState(() {
+          guardando = false;
+        });
+      }
+    }
   }
 }
