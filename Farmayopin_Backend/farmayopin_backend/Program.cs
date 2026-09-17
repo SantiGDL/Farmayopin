@@ -2,6 +2,7 @@ using farmayopin_backend.Servicios;
 
 using farmayopin_backend.Persistencia;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.BearerToken;
 
 var constructor = WebApplication.CreateBuilder(args);
 
@@ -30,11 +31,16 @@ constructor.Services.AddCors(opciones =>
 //Hasta acá
 constructor.Services.AddControllers();
 constructor.Services.AddOpenApi();
+constructor.Services.AddAuthentication(BearerTokenDefaults.AuthenticationScheme)
+    .AddBearerToken();
+constructor.Services.AddAuthorization();
 //Agrego los servicios para que los manege el gestor de depedencias como singleton
 //Es para que el backend pueda crear el servicio de productos como dependencia injectable en otras partes del sistema.
 //O sea que cuando otra clase lo necesite, el sistema le va a dar la misma instancia de ServicioProductos que se creó acá.
 constructor.Services.AddScoped<ServicioGeneral>();
 constructor.Services.AddScoped<ServicioAdmin>();
+constructor.Services.AddScoped<ServicioCliente>();
+constructor.Services.AddScoped<ServicioSesionCliente>();
 var aplicacion = constructor.Build();
 
 if (aplicacion.Environment.IsDevelopment())
@@ -47,6 +53,7 @@ else
 }
 
 aplicacion.UseCors("FlutterDev");
+aplicacion.UseAuthentication();
 aplicacion.UseAuthorization();
 aplicacion.UseStaticFiles();
 aplicacion.MapControllers();

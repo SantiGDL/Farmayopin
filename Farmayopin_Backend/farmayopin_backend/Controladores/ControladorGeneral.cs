@@ -22,24 +22,28 @@ public class ControladorGeneral : ControllerBase
 
     
     private readonly ServicioGeneral _servicioGeneral;
+    private readonly ServicioSesionCliente _sesionCliente;
     private readonly ILogger<ControladorGeneral> _logger;   //Es para loguear mensajes
 
     // Inyecto el servicio y el logger en el constructor
-    public ControladorGeneral(ServicioGeneral servicio, ILogger<ControladorGeneral> logger)
+    public ControladorGeneral(ServicioGeneral servicio, ILogger<ControladorGeneral> logger,
+        ServicioSesionCliente sesionCliente)
     {
         _servicioGeneral = servicio;
         _logger = logger;
+        _sesionCliente = sesionCliente;
     }
 
     [HttpPost("consultarRolUsuario")]
     public IActionResult ConsultarRolUsuario([FromBody] ConsultaRolDTO usuarioConsultado)
     {
         //Consulto Rol a BD
-        var resultado = _servicioGeneral.ConsultarRolUsuario(usuarioConsultado);
+        var resultado = _servicioGeneral.ConsultarRolUsuario(usuarioConsultado, out int? usuarioId);
         
         if (resultado == ResultadoConsultarRolUsuario.RolCliente)
         {
-            return Ok(new { rol = "Cliente" });     //Envio JSON con Rol Cliente 
+            string token = _sesionCliente.CrearToken(usuarioId!.Value);
+            return Ok(new { rol = "Cliente", token });
         }
         else if (resultado == ResultadoConsultarRolUsuario.RolAdmin)
         {

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../dtos/resultado_registro.dart';
 import '../dtos/resultado_iniciar_sesion.dart';
+import '../config/api_config.dart';
 
 // Equivale al ServicioGeneral del backend: aquí viven las operaciones generales.
 // No conoce pantallas, BuildContext ni navegación. LLama Endpoints
@@ -19,7 +20,6 @@ class ServicioGeneral {
   ServicioGeneral({http.Client? cliente}) : _cliente = cliente ?? http.Client();
 
   final http.Client _cliente;
-  static const _urlBase = 'http://localhost:5206/api/controladorGeneral';
 
 
 
@@ -29,7 +29,7 @@ class ServicioGeneral {
     //Envio una peticion Post y Guardo el resultado en una variable
     try{
       final http.Response respuestaBackend = await _cliente.post(
-          Uri.parse('$_urlBase/consultarRolUsuario'),
+          ApiConfig.uri('/api/controladorGeneral/consultarRolUsuario'),
           headers: {'Content-Type': 'application/json; charset=UTF-8'},
           body: jsonEncode({                                         
           'Correo': correo.trim(),
@@ -39,7 +39,12 @@ class ServicioGeneral {
       if (respuestaBackend.statusCode == 200) 
       {
         final Map<String, dynamic> respuesta = jsonDecode(respuestaBackend.body);
-        return ResultadoIniciarSesion(exito: true, mensaje: 'Credenciales correctas.',rol: respuesta['rol'],);
+        return ResultadoIniciarSesion(
+          exito: true,
+          mensaje: 'Credenciales correctas.',
+          rol: respuesta['rol'],
+          token: respuesta['token'] as String?,
+        );
       }
       if (respuestaBackend.statusCode == 401) {
         return ResultadoIniciarSesion(exito: false,mensaje: 'Correo o contraseña incorrectos.');
@@ -62,7 +67,7 @@ class ServicioGeneral {
   {
     try {
       final respuesta = await _cliente.post(
-        Uri.parse('$_urlBase/nuevoCliente'),
+        ApiConfig.uri('/api/controladorGeneral/nuevoCliente'),
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonEncode({
           'Nombre': nombre.trim(),

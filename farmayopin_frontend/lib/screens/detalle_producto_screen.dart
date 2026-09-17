@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../controladores/controlador_admin.dart';
 import '../dtos/producto_listado.dart';
+import '../config/api_config.dart';
 
 // Muestra los datos reales de un producto. La lista los recibe por Navigator
 // y esta pantalla solo los dibuja; no vuelve a consultarlos al backend.
 class DetalleProductoScreen extends StatelessWidget {
-  const DetalleProductoScreen({super.key, required this.producto});
+  const DetalleProductoScreen({super.key, required this.producto, this.esCliente = false});
 
   final ProductoListado producto;
+  final bool esCliente;
 
   final ControladorAdmin controlador = const ControladorAdmin();
 
@@ -77,9 +79,9 @@ class DetalleProductoScreen extends StatelessWidget {
               width: 100,
               semanticLabel: 'Farmayopin',
             ),
-            const Text(
-              'Administrador',
-              style: TextStyle(
+            Text(
+              esCliente ? 'Cliente' : 'Administrador',
+              style: const TextStyle(
                 color: Colors.grey,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -149,7 +151,7 @@ class DetalleProductoScreen extends StatelessWidget {
   // vacía o falla al cargar => imagen local por defecto.
   Widget _imagenProducto() {
     final String? url = producto.fotoUrl;
-    final bool tieneUrl = url != null && url.trim().isNotEmpty;
+    final bool tieneUrl = url != null && url.trim().isNotEmpty && !url.startsWith('assets/');
     return Container(
       height: 220,
       width: double.infinity,
@@ -163,7 +165,7 @@ class DetalleProductoScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: tieneUrl
             ? Image.network(
-                url,
+                ApiConfig.uri(url.trim()).toString(),
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   return _imagenPorDefecto();
@@ -374,6 +376,13 @@ class DetalleProductoScreen extends StatelessWidget {
   }
 
   Widget _acciones(BuildContext context) {
+    if (esCliente) {
+      return OutlinedButton.icon(
+        onPressed: () { controlador.volverAlMenu(context); },
+        icon: const Icon(Icons.arrow_back),
+        label: const Text('Volver a productos'),
+      );
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool compacto = constraints.maxWidth < 340;
