@@ -14,7 +14,8 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -28,22 +29,21 @@ public class ConsultasClienteTests : IDisposable
     private readonly TestServer _servidor;
     private readonly WebApplication _aplicacion;
     private readonly HttpClient _cliente;
+    private readonly SqliteConnection _conexion;
 
     public ConsultasClienteTests()
     {
-        string basePrueba = Guid.NewGuid().ToString();
+        _conexion = new SqliteConnection("Data Source=:memory:");
+        _conexion.Open();
         WebApplicationBuilder constructor = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             EnvironmentName = "Testing"
         });
         constructor.WebHost.UseTestServer();
-        constructor.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["Carrito:CostoEnvio"] = "700"
-        });
+        constructor.Logging.ClearProviders();
         IServiceCollection servicios = constructor.Services;
         servicios.AddDbContext<ManejadorPersistencia>(opciones =>
-            opciones.UseInMemoryDatabase(basePrueba));
+            opciones.UseSqlite(_conexion));
         servicios.AddControllers().AddApplicationPart(typeof(ControladorCliente).Assembly);
         servicios.AddSingleton<IDataProtectionProvider>(new EphemeralDataProtectionProvider());
         servicios.AddAuthentication(BearerTokenDefaults.AuthenticationScheme).AddBearerToken();
@@ -67,6 +67,7 @@ public class ConsultasClienteTests : IDisposable
     {
         using IServiceScope alcance = _servidor.Services.CreateScope();
         ManejadorPersistencia persistencia = alcance.ServiceProvider.GetRequiredService<ManejadorPersistencia>();
+        persistencia.Database.EnsureCreated();
         Producto medicamento = new Producto("P1", "Paracetamol", "Analgésico", 2450m, "/Imagenes/Productos/Paracetamol.jpeg", 12)
         {
             Categoria = CategoriaProducto.ANALGESICOS,
@@ -190,17 +191,6 @@ public class ConsultasClienteTests : IDisposable
     }
 
     [Fact]
-    public async Task TarifaNoDefinidaNoInventaEnvioNiTotal()
-    {
-        IConfiguration configuracion = _servidor.Services.GetRequiredService<IConfiguration>();
-        configuracion["Carrito:CostoEnvio"] = null;
-        JsonElement carrito = await ConsultarCarrito("ana@example.com");
-        Assert.Equal(JsonValueKind.Null, carrito.GetProperty("envio").ValueKind);
-        Assert.Equal(JsonValueKind.Null, carrito.GetProperty("total").ValueKind);
-        Assert.Equal(5201.50m, carrito.GetProperty("subtotal").GetDecimal());
-    }
-
-    [Fact]
     public async Task CarritoRechazaSolicitudSinTokenOTokenAlterado()
     {
         HttpResponseMessage anonima = await _cliente.GetAsync("/api/controladorCliente/verCarrito");
@@ -243,9 +233,136 @@ public class ConsultasClienteTests : IDisposable
         Assert.Equal(HttpStatusCode.Unauthorized, incorrecta.StatusCode);
     }
 
+    private async Task<HttpResponseMessage> Cambiar(string correo, HttpMethod metodo, string ruta, object? datos = null)
+    {
+        using HttpRequestMessage solicitud = new HttpRequestMessage(metodo, "/api/controladorCliente/" + ruta);
+        solicitud.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await IniciarSesion(correo));
+        if (datos != null) solicitud.Content = JsonContent.Create(datos);
+        return await _cliente.SendAsync(solicitud);
+    }
+
+    [Fact]
+    public async Task PrimerAgregadoCreaCarritoYRepetidosSumanSinDuplicarNiDescontarStock()
+    {
+        using IServiceScope alcance = _servidor.Services.CreateScope();
+        ManejadorPersistencia db = alcance.ServiceProvider.GetRequiredService<ManejadorPersistencia>();
+        int productoId = db.Productos.Single(producto => producto.Codigo == "P1").Id;
+        HttpResponseMessage primero = await Cambiar("vacio@example.com", HttpMethod.Post, "agregarProducto", new { productoId, cantidad = 1 });
+        primero.EnsureSuccessStatusCode();
+        HttpResponseMessage segundo = await Cambiar("vacio@example.com", HttpMethod.Post, "agregarProducto", new { productoId, cantidad = 2 });
+        segundo.EnsureSuccessStatusCode();
+        JsonElement carrito = await segundo.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, carrito.GetProperty("lineas").GetArrayLength());
+        Assert.Equal(3, carrito.GetProperty("cantidadProductos").GetInt32());
+        Assert.Equal(8050m, carrito.GetProperty("total").GetDecimal());
+        Assert.Equal(3, db.Carritos.Count());
+        Assert.Equal(2, db.Productos.Count());
+        Assert.Equal(12, db.Productos.AsNoTracking().Single(producto => producto.Id == productoId).Stock);
+    }
+
+    [Fact]
+    public async Task AgregarRechazaCantidadesInvalidasStockInsuficienteYProductoInexistente()
+    {
+        using IServiceScope alcance = _servidor.Services.CreateScope();
+        ManejadorPersistencia db = alcance.ServiceProvider.GetRequiredService<ManejadorPersistencia>();
+        int productoId = db.Productos.Single(producto => producto.Codigo == "P1").Id;
+        Assert.Equal(HttpStatusCode.BadRequest, (await Cambiar("vacio@example.com", HttpMethod.Post, "agregarProducto", new { productoId, cantidad = 0 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await Cambiar("vacio@example.com", HttpMethod.Post, "agregarProducto", new { productoId, cantidad = 13 })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Cambiar("vacio@example.com", HttpMethod.Post, "agregarProducto", new { productoId = 999, cantidad = 1 })).StatusCode);
+        Assert.Equal(2, db.Carritos.Count());
+        (await Cambiar("vacio@example.com", HttpMethod.Post, "agregarProducto", new { productoId, cantidad = 12 })).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.Conflict, (await Cambiar("vacio@example.com", HttpMethod.Post, "agregarProducto", new { productoId, cantidad = 1 })).StatusCode);
+        JsonElement carrito = await ConsultarCarrito("vacio@example.com");
+        Assert.Equal(12, carrito.GetProperty("cantidadProductos").GetInt32());
+    }
+
+    [Fact]
+    public async Task CantidadesYEliminarActualizanTotalesSinTocarProductosNiCarritosAjenos()
+    {
+        JsonElement carrito = await ConsultarCarrito("ana@example.com");
+        int lineaId = carrito.GetProperty("lineas")[1].GetProperty("id").GetInt32();
+        foreach (int cantidad in new[] { 3, 1 })
+        {
+            HttpResponseMessage cambio = await Cambiar("ana@example.com", HttpMethod.Put, "lineas/" + lineaId, new { cantidad });
+            cambio.EnsureSuccessStatusCode();
+            JsonElement actualizado = await cambio.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal(2450m * cantidad + 301.50m + 700m, actualizado.GetProperty("total").GetDecimal());
+        }
+        Assert.Equal(HttpStatusCode.BadRequest, (await Cambiar("ana@example.com", HttpMethod.Put, "lineas/" + lineaId, new { cantidad = -1 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await Cambiar("ana@example.com", HttpMethod.Put, "lineas/" + lineaId, new { cantidad = 13 })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Cambiar("bruno@example.com", HttpMethod.Put, "lineas/" + lineaId, new { cantidad = 2 })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Cambiar("bruno@example.com", HttpMethod.Delete, "lineas/" + lineaId)).StatusCode);
+        (await Cambiar("ana@example.com", HttpMethod.Delete, "lineas/" + lineaId)).EnsureSuccessStatusCode();
+        int otraLinea = carrito.GetProperty("lineas")[0].GetProperty("id").GetInt32();
+        (await Cambiar("ana@example.com", HttpMethod.Delete, "lineas/" + otraLinea)).EnsureSuccessStatusCode();
+        JsonElement vacio = await ConsultarCarrito("ana@example.com");
+        Assert.Equal(0m, vacio.GetProperty("total").GetDecimal());
+        Assert.Equal(1, (await ConsultarCarrito("bruno@example.com")).GetProperty("cantidadProductos").GetInt32());
+        using IServiceScope alcance = _servidor.Services.CreateScope();
+        Assert.Equal(2, alcance.ServiceProvider.GetRequiredService<ManejadorPersistencia>().Productos.Count());
+    }
+
+    [Fact]
+    public async Task ConfirmacionRecalculaPreciosGuardaHistoricoDescuentaStockYVaciaElMismoCarrito()
+    {
+        using IServiceScope alcance = _servidor.Services.CreateScope();
+        ManejadorPersistencia db = alcance.ServiceProvider.GetRequiredService<ManejadorPersistencia>();
+        Producto producto = db.Productos.Single(actual => actual.Codigo == "P1");
+        (await Cambiar("vacio@example.com", HttpMethod.Post, "agregarProducto", new { productoId = producto.Id, cantidad = 2 })).EnsureSuccessStatusCode();
+        producto.Precio = 3000m;
+        producto.Nombre = "Nombre actualizado";
+        db.SaveChanges();
+        JsonElement antes = await ConsultarCarrito("vacio@example.com");
+        // Los importes y el usuario falsos del cuerpo no son utilizados.
+        HttpResponseMessage respuesta = await Cambiar("vacio@example.com", HttpMethod.Post, "confirmarCompra", new { total = 1, usuarioId = 1 });
+        respuesta.EnsureSuccessStatusCode();
+        JsonElement resultado = await respuesta.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(6700m, resultado.GetProperty("total").GetDecimal());
+        Compra compra = db.Compras.Include(actual => actual.ListaDeLineasCompra).Single();
+        Assert.Equal(EstadoCompra.PAGADA, compra.EstadoCompra);
+        Assert.Equal(db.Usuarios.Single(usuario => usuario.Correo == "vacio@example.com").Id, compra.UsuarioAsociadoId);
+        Assert.Equal(antes.GetProperty("id").GetInt32(), compra.CarritoAsociadoId);
+        LineaDeCompra linea = Assert.Single(compra.ListaDeLineasCompra);
+        Assert.Equal("Nombre actualizado", linea.NombreProducto);
+        Assert.Equal(3000m, linea.PrecioUnitario);
+        Assert.Equal(2, linea.CantidadProducto);
+        Assert.Equal(producto.Id, linea.ProductoAsociadoId);
+        Assert.Equal(10, db.Productos.AsNoTracking().Single(actual => actual.Id == producto.Id).Stock);
+        JsonElement despues = await ConsultarCarrito("vacio@example.com");
+        Assert.Equal(antes.GetProperty("id").GetInt32(), despues.GetProperty("id").GetInt32());
+        Assert.Equal(0, despues.GetProperty("cantidadProductos").GetInt32());
+        Assert.Equal(HttpStatusCode.Conflict, (await Cambiar("vacio@example.com", HttpMethod.Post, "confirmarCompra")).StatusCode);
+        Assert.Equal(1, db.Compras.Count());
+        Assert.Equal(5, (await ConsultarCarrito("ana@example.com")).GetProperty("cantidadProductos").GetInt32());
+    }
+
+    [Fact]
+    public async Task FaltaDeStockCancelaTodaLaCompraSinCambiosParciales()
+    {
+        HttpResponseMessage respuesta = await Cambiar("ana@example.com", HttpMethod.Post, "confirmarCompra");
+        Assert.Equal(HttpStatusCode.Conflict, respuesta.StatusCode);
+        using IServiceScope alcance = _servidor.Services.CreateScope();
+        ManejadorPersistencia db = alcance.ServiceProvider.GetRequiredService<ManejadorPersistencia>();
+        Assert.Empty(db.Compras);
+        Assert.Empty(db.LineasDeCompra);
+        Assert.Equal(12, db.Productos.Single(producto => producto.Codigo == "P1").Stock);
+        Assert.Equal(3, db.LineasDeCarrito.Count());
+        Assert.Equal(HttpStatusCode.Conflict, (await Cambiar("vacio@example.com", HttpMethod.Post, "confirmarCompra")).StatusCode);
+    }
+
+    [Fact]
+    public async Task TodasLasMutacionesExigenSesion()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _cliente.PostAsJsonAsync("/api/controladorCliente/agregarProducto", new { productoId = 1, cantidad = 1 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _cliente.PutAsJsonAsync("/api/controladorCliente/lineas/1", new { cantidad = 1 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _cliente.DeleteAsync("/api/controladorCliente/lineas/1")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _cliente.PostAsync("/api/controladorCliente/confirmarCompra", null)).StatusCode);
+    }
+
     public void Dispose()
     {
         _cliente.Dispose();
         _aplicacion.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        _conexion.Dispose();
     }
 }

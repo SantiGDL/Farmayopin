@@ -31,6 +31,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   ControladorAdmin get controladorAdmin => widget.controladorAdmin;
   List<ProductoListado> productos = [];
   bool cargando = true;
+  bool agregando = false;
   String? errorCarga;
   String busqueda = '';
   String categoria = 'Todos';
@@ -103,15 +104,20 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _encabezado(),
-                  if (!widget.esCliente)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: () => controladorAdmin.volverAlMenu(context),
-                        icon: const Icon(Icons.arrow_back),
-                        label: const Text('Volver'),
-                      ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        if (widget.esCliente) {
+                          widget.controladorCliente.volver(context);
+                        } else {
+                          controladorAdmin.volverAlMenu(context);
+                        }
+                      },
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('Volver'),
                     ),
+                  ),
                   if (widget.esCliente) ...[
                     const SizedBox(height: 18),
                     const PresentacionCliente(
@@ -168,9 +174,14 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
                     const SizedBox(height: 32),
                     Center(
                       child: FilledButton.icon(
-                        onPressed: () {
-                          widget.controladorCliente.verCarrito(context);
-                        },
+                        onPressed: agregando
+                            ? null
+                            : () async {
+                                await widget.controladorCliente.verCarrito(
+                                  context,
+                                );
+                                if (mounted) await _cargarProductos();
+                              },
                         icon: const Icon(
                           Icons.shopping_cart_outlined,
                           size: 20,
@@ -326,9 +337,15 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           TextButton.icon(
-            onPressed: () {
-              widget.controladorCliente.verProducto(context, producto);
-            },
+            onPressed: agregando
+                ? null
+                : () async {
+                    await widget.controladorCliente.verProducto(
+                      context,
+                      producto,
+                    );
+                    if (mounted) await _cargarProductos();
+                  },
             icon: const Icon(Icons.visibility_outlined, size: 20),
             label: const Text('Ver'),
             style: TextButton.styleFrom(
@@ -340,12 +357,23 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
             ),
           ),
           TextButton.icon(
-            onPressed: () {
-              widget.controladorCliente.mostrarPendiente(
-                context,
-                'Agregar al carrito',
-              );
-            },
+            onPressed: agregando || producto.stock < 1
+                ? null
+                : () async {
+                    setState(() {
+                      agregando = true;
+                    });
+                    await widget.controladorCliente.agregarProducto(
+                      context,
+                      producto,
+                      1,
+                    );
+                    if (mounted) {
+                      setState(() {
+                        agregando = false;
+                      });
+                    }
+                  },
             icon: const Icon(Icons.add_shopping_cart, size: 17),
             label: const Text('Agregar'),
             style: TextButton.styleFrom(

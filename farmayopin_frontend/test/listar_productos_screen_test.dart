@@ -84,8 +84,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(DetalleProductoScreen), findsOneWidget);
       expect(find.text('Editar producto'), findsNothing);
-      await tester.ensureVisible(find.text('Volver a productos'));
-      await tester.tap(find.text('Volver a productos'));
+      await tester.ensureVisible(find.text('Volver'));
+      await tester.tap(find.text('Volver'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Ver carrito'));
       await tester.tap(find.text('Ver carrito'));

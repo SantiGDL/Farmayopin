@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../config/api_config.dart';
 import '../dtos/producto_listado.dart';
+import '../dtos/carrito_cliente.dart';
 
 // Piezas compartidas por el catálogo y el carrito del diseño del cliente.
 class EncabezadoCliente extends StatelessWidget {
   const EncabezadoCliente({super.key, required this.cerrarSesion});
 
-  final VoidCallback cerrarSesion;
+  final VoidCallback? cerrarSesion;
 
   @override
   Widget build(BuildContext context) {
@@ -339,6 +340,93 @@ class TarjetaProductoCliente extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class VolverCliente extends StatelessWidget {
+  const VolverCliente({super.key, required this.volver});
+  final VoidCallback? volver;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        onPressed: volver,
+        icon: const Icon(Icons.arrow_back, size: 18),
+        label: const Text('Volver'),
+        style: TextButton.styleFrom(foregroundColor: const Color(0xFF199F98)),
+      ),
+    );
+  }
+}
+
+class ResumenCarritoCliente extends StatelessWidget {
+  const ResumenCarritoCliente({
+    super.key,
+    required this.carrito,
+    this.esConfirmacion = false,
+  });
+  final CarritoCliente carrito;
+  final bool esConfirmacion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFBBBBBB)),
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Column(
+        children: [
+          if (esConfirmacion) ...[
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Resumen de pago',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          _importe(
+            'Subtotal (${carrito.cantidadProductos} productos)',
+            carrito.subtotal,
+            false,
+          ),
+          const SizedBox(height: 6),
+          _importe('Envío', carrito.envio, false),
+          const Divider(),
+          _importe(
+            esConfirmacion ? 'Total a pagar' : 'Total',
+            carrito.total,
+            true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _importe(String etiqueta, double? valor, bool destacar) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            etiqueta,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: destacar ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          valor == null ? 'A confirmar' : formatearImporte(valor),
+          style: const TextStyle(fontSize: 11, color: Color(0xFF168E88)),
+        ),
+      ],
     );
   }
 }

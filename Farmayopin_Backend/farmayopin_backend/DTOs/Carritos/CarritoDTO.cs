@@ -6,7 +6,7 @@ public class CarritoDTO
     public List<LineaDeCarritoDTO> Lineas { get; set; } = new List<LineaDeCarritoDTO>();
     public int CantidadProductos { get; set; }
     public decimal Subtotal { get; set; }
-    // Null indica que el equipo todavía no definió una tarifa de envío.
+    // El servicio aplica $700 al carrito con productos y $0 al vacío.
     public decimal? Envio { get; set; }
     public decimal? Total { get; set; }
 }

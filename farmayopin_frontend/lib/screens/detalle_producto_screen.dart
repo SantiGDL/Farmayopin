@@ -1,16 +1,40 @@
 import 'package:flutter/material.dart';
 
 import '../controladores/controlador_admin.dart';
+import '../controladores/controlador_cliente.dart';
+import '../widgets/productos_cliente_widgets.dart';
 import '../dtos/producto_listado.dart';
 import '../config/api_config.dart';
 
-// Muestra los datos reales de un producto. La lista los recibe por Navigator
-// y esta pantalla solo los dibuja; no vuelve a consultarlos al backend.
-class DetalleProductoScreen extends StatelessWidget {
-  const DetalleProductoScreen({super.key, required this.producto, this.esCliente = false});
+// Conserva el detalle administrativo y conecta las acciones del cliente.
+class DetalleProductoScreen extends StatefulWidget {
+  const DetalleProductoScreen({
+    super.key,
+    required this.producto,
+    this.esCliente = false,
+    this.controladorCliente = const ControladorCliente(),
+  });
 
   final ProductoListado producto;
   final bool esCliente;
+  final ControladorCliente controladorCliente;
+
+  @override
+  State<DetalleProductoScreen> createState() => _DetalleProductoScreenState();
+}
+
+class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
+  late ProductoListado producto;
+  bool get esCliente => widget.esCliente;
+  int cantidad = 1;
+  bool enviando = false;
+  bool disponible = true;
+
+  @override
+  void initState() {
+    super.initState();
+    producto = widget.producto;
+  }
 
   final ControladorAdmin controlador = const ControladorAdmin();
 
@@ -35,7 +59,15 @@ class DetalleProductoScreen extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
-                      onPressed: () => controlador.volverAlMenu(context),
+                      onPressed: enviando
+                          ? null
+                          : () {
+                              if (esCliente) {
+                                widget.controladorCliente.volver(context);
+                              } else {
+                                controlador.volverAlMenu(context);
+                              }
+                            },
                       icon: const Icon(Icons.arrow_back),
                       label: const Text('Volver'),
                     ),
@@ -65,6 +97,11 @@ class DetalleProductoScreen extends StatelessWidget {
   }
 
   Widget _encabezado(BuildContext context) {
+    if (esCliente) {
+      return EncabezadoCliente(
+        cerrarSesion: () => widget.controladorCliente.cerrarSesion(context),
+      );
+    }
     return Wrap(
       alignment: WrapAlignment.spaceBetween,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -103,6 +140,13 @@ class DetalleProductoScreen extends StatelessWidget {
   }
 
   Widget _presentacion() {
+    if (esCliente) {
+      return const PresentacionCliente(
+        titulo: 'Detalle del Producto',
+        descripcion:
+            'Consultá la información detallada del producto seleccionado.',
+      );
+    }
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 7),
       padding: const EdgeInsets.all(18),
@@ -151,7 +195,8 @@ class DetalleProductoScreen extends StatelessWidget {
   // vacía o falla al cargar => imagen local por defecto.
   Widget _imagenProducto() {
     final String? url = producto.fotoUrl;
-    final bool tieneUrl = url != null && url.trim().isNotEmpty && !url.startsWith('assets/');
+    final bool tieneUrl =
+        url != null && url.trim().isNotEmpty && !url.startsWith('assets/');
     return Container(
       height: 220,
       width: double.infinity,
@@ -249,8 +294,7 @@ class DetalleProductoScreen extends StatelessWidget {
 
   // Separador de miles simple, sin agregar el paquete intl al proyecto.
   // Separa los miles y conserva los centavos cuando el precio los tiene.
-  String _formatearPrecio(double precio)
-  {
+  String _formatearPrecio(double precio) {
     final List<String> partes = precio.toStringAsFixed(2).split('.');
     final String digitos = partes[0];
     final StringBuffer resultado = StringBuffer();
@@ -261,14 +305,31 @@ class DetalleProductoScreen extends StatelessWidget {
       }
       resultado.write(digitos[i]);
     }
-    if (partes[1] != '00')
-    {
+    if (partes[1] != '00') {
       resultado.write(',${partes[1]}');
     }
     return resultado.toString();
   }
 
   Widget _informacion() {
+    if (esCliente) {
+      return Column(
+        children: [
+          _datoCliente(Icons.sell_outlined, 'Categoría', producto.categoria),
+          _datoCliente(Icons.qr_code_2_outlined, 'Código', producto.codigo),
+          _datoCliente(
+            Icons.inventory_2_outlined,
+            'Stock disponible',
+            '${producto.stock} unidades',
+          ),
+          _datoCliente(
+            Icons.medication_outlined,
+            'Unidad de medida',
+            producto.unidad,
+          ),
+        ],
+      );
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         final double ancho = constraints.maxWidth < 300
@@ -313,6 +374,40 @@ class DetalleProductoScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _datoCliente(IconData icono, String etiqueta, String valor) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Icon(icono, size: 18, color: _turquesa),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  etiqueta,
+                  style: const TextStyle(fontSize: 11, color: _textoSecundario),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  valor.isEmpty ? '-' : valor,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+      ],
     );
   }
 
@@ -369,18 +464,119 @@ class DetalleProductoScreen extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           producto.descripcion,
-          style: const TextStyle(fontSize: 13, color: _textoSecundario, height: 1.4),
+          style: const TextStyle(
+            fontSize: 13,
+            color: _textoSecundario,
+            height: 1.4,
+          ),
         ),
       ],
     );
   }
 
+  Future<void> _agregar() async {
+    setState(() {
+      enviando = true;
+    });
+    await widget.controladorCliente.agregarProducto(
+      context,
+      producto,
+      cantidad,
+    );
+    if (mounted) {
+      setState(() {
+        enviando = false;
+      });
+    }
+  }
+
+  Future<void> _irAlCarrito() async {
+    await widget.controladorCliente.verCarrito(context);
+    if (!mounted) return;
+    setState(() {
+      enviando = true;
+    });
+    try {
+      final List<ProductoListado> productos = await widget.controladorCliente
+          .listarProductos();
+      if (!mounted) return;
+      ProductoListado? actualizado;
+      for (final ProductoListado actual in productos) {
+        if (actual.id == producto.id) actualizado = actual;
+      }
+      setState(() {
+        disponible = actualizado != null;
+        if (actualizado != null) producto = actualizado;
+        if (cantidad > producto.stock) {
+          cantidad = producto.stock > 0 ? producto.stock : 1;
+        }
+      });
+    } catch (error) {
+      if (mounted) widget.controladorCliente.mostrarError(context, error);
+    } finally {
+      if (mounted) {
+        setState(() {
+          enviando = false;
+        });
+      }
+    }
+  }
+
   Widget _acciones(BuildContext context) {
     if (esCliente) {
-      return OutlinedButton.icon(
-        onPressed: () { controlador.volverAlMenu(context); },
-        icon: const Icon(Icons.arrow_back),
-        label: const Text('Volver a productos'),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Cantidad',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Disminuir cantidad',
+                onPressed: enviando || cantidad <= 1
+                    ? null
+                    : () => setState(() {
+                        cantidad--;
+                      }),
+                icon: const Icon(Icons.remove),
+              ),
+              Text('$cantidad'),
+              IconButton(
+                tooltip: 'Aumentar cantidad',
+                onPressed: enviando || cantidad >= producto.stock
+                    ? null
+                    : () => setState(() {
+                        cantidad++;
+                      }),
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
+          if (enviando) const LinearProgressIndicator(),
+          FilledButton.icon(
+            onPressed: enviando || !disponible || producto.stock < 1
+                ? null
+                : _agregar,
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text('Agregar al Carrito'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF199F98),
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: enviando ? null : _irAlCarrito,
+            icon: const Icon(Icons.shopping_cart_outlined),
+            label: const Text('Ir al carrito'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF168E88),
+            ),
+          ),
+        ],
       );
     }
     return LayoutBuilder(
