@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import '../servicios/servicio_cliente.dart';
 import '../dtos/carrito_cliente.dart';
 import '../dtos/compra_confirmada.dart';
+import '../dtos/resumen_compra.dart';
+import '../dtos/detalle_compra.dart';
 import '../dtos/producto_listado.dart';
 import '../screens/listar_productos_screen.dart';
 import '../screens/ver_carrito_screen.dart';
 import '../screens/detalle_producto_screen.dart';
 import '../screens/confirmar_compra_screen.dart';
+import '../screens/historico_compras_screen.dart';
+import '../screens/detalle_compra_screen.dart';
 import 'controlador_general.dart';
 
 // Coordina los botones del cliente. Las operaciones se delegan al servicio.
@@ -210,7 +214,89 @@ class ControladorCliente {
   }
 
   void verHistorico(BuildContext referenciaPantalla) {
-    _mostrarAviso(referenciaPantalla, servicio.verHistorico());
+    Navigator.of(referenciaPantalla).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return HistoricoComprasScreen(controlador: this);
+        },
+      ),
+    );
+  }
+
+  Future<List<ResumenCompra>> cargarHistorico() {
+    return servicio.verHistorico();
+  }
+
+  void verDetalleCompra(BuildContext referenciaPantalla, int compraId) {
+    Navigator.of(referenciaPantalla).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return DetalleCompraScreen(compraId: compraId, controlador: this);
+        },
+      ),
+    );
+  }
+
+  Future<DetalleCompra> cargarDetalleCompra(int compraId) {
+    return servicio.obtenerDetalleCompra(compraId);
+  }
+
+  String identificadorPedido(int compraId) {
+    return '#FYP-${compraId.toString().padLeft(5, '0')}';
+  }
+
+  List<ResumenCompra> filtrarCompras(
+    List<ResumenCompra> compras,
+    String busqueda,
+  ) {
+    final String texto = busqueda.trim().toLowerCase();
+    final List<ResumenCompra> visibles = [];
+    for (final ResumenCompra compra in compras) {
+      final bool coincidePedido = identificadorPedido(compra.id)
+          .toLowerCase()
+          .contains(texto);
+      final bool coincideProducto = compra.nombresProductos.any((
+        String nombre,
+      ) {
+        return nombre.toLowerCase().contains(texto);
+      });
+      if (coincidePedido || coincideProducto) {
+        visibles.add(compra);
+      }
+    }
+    return visibles;
+  }
+
+  static const int comprasPorPagina = 7;
+
+  List<ResumenCompra> paginaCompras(List<ResumenCompra> compras, int pagina) {
+    return compras
+        .skip((pagina - 1) * comprasPorPagina)
+        .take(comprasPorPagina)
+        .toList();
+  }
+
+  List<LineaCompra> filtrarDetalleCompra(
+    DetalleCompra compra,
+    String busqueda,
+    String categoria,
+  ) {
+    final List<ProductoListado> productos = [];
+    for (final LineaCompra linea in compra.lineas) {
+      productos.add(linea.producto);
+    }
+    final List<ProductoListado> visibles = filtrarProductos(
+      productos,
+      busqueda,
+      categoria,
+    );
+    final List<LineaCompra> lineas = [];
+    for (final LineaCompra linea in compra.lineas) {
+      if (visibles.contains(linea.producto)) {
+        lineas.add(linea);
+      }
+    }
+    return lineas;
   }
 
   void cerrarSesion(BuildContext referenciaPantalla) {

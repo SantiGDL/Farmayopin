@@ -1,4 +1,5 @@
 using farmayopin_backend.DTOs.Carritos;
+using farmayopin_backend.DTOs.Compras;
 using farmayopin_backend.DTOs.Productos;
 using farmayopin_backend.Modelos;
 using farmayopin_backend.Persistencia;
@@ -16,6 +17,76 @@ public class ServicioCliente
     public ServicioCliente(ManejadorPersistencia persistencia)
     {
         _persistencia = persistencia;
+    }
+
+    public List<ResumenCompraDTO> ListarCompras(int usuarioId)
+    {
+        // Una consulta con las líneas: no consultamos cada compra por separado.
+        List<Compra> compras = ComprasPagadasDelCliente(usuarioId)
+            .Include(compra => compra.ListaDeLineasCompra)
+            .OrderByDescending(compra => compra.FechaCompra)
+            .ThenByDescending(compra => compra.Id)
+            .ToList();
+
+        List<ResumenCompraDTO> resumenes = new List<ResumenCompraDTO>();
+        foreach (Compra compra in compras)
+        {
+            ResumenCompraDTO resumen = new ResumenCompraDTO
+            {
+                Id = compra.Id,
+                // ConfirmarCompra guarda UTC; MariaDB no conserva DateTime.Kind.
+                FechaCompra = DateTime.SpecifyKind(compra.FechaCompra, DateTimeKind.Utc),
+                PrecioTotal = compra.PrecioTotal,
+                CantidadProductos = compra.ListaDeLineasCompra.Sum(linea => linea.CantidadProducto),
+                NombresProductos = compra.ListaDeLineasCompra.Select(linea => linea.NombreProducto).Distinct().ToList()
+            };
+            resumenes.Add(resumen);
+        }
+        return resumenes;
+    }
+
+    public DetalleCompraDTO? ObtenerDetalleCompra(int usuarioId, int compraId)
+    {
+        // Se verifica pertenencia y estado en la misma consulta que busca el Id.
+        Compra? compra = ComprasPagadasDelCliente(usuarioId)
+            .Include(actual => actual.ListaDeLineasCompra)
+            .ThenInclude(linea => linea.ProductoAsociado)
+            .SingleOrDefault(actual => actual.Id == compraId);
+        if (compra == null)
+        {
+            return null;
+        }
+
+        DetalleCompraDTO detalle = new DetalleCompraDTO
+        {
+            Id = compra.Id,
+            FechaCompra = DateTime.SpecifyKind(compra.FechaCompra, DateTimeKind.Utc),
+            Total = compra.PrecioTotal
+        };
+        foreach (LineaDeCompra linea in compra.ListaDeLineasCompra.OrderBy(actual => actual.Id))
+        {
+            Producto producto = linea.ProductoAsociado;
+            ProductoDTO datosProducto = new ProductoDTO(
+                producto.Id, producto.Codigo, linea.NombreProducto, producto.Detalle,
+                linea.PrecioUnitario, producto.FotoUrl, producto.Stock,
+                producto.Categoria?.ToString(), producto.Unidad?.ToString());
+            LineaCompraDTO datosLinea = new LineaCompraDTO(linea.Id, datosProducto, linea.CantidadProducto);
+            detalle.Lineas.Add(datosLinea);
+            detalle.CantidadProductos += datosLinea.Cantidad;
+            detalle.Subtotal += datosLinea.Subtotal;
+        }
+        // No existe un campo Envio en Compra. La diferencia recupera el importe
+        // aplicado al pagar ($700 en el flujo actual) sin alterar el total guardado.
+        detalle.Envio = detalle.Total - detalle.Subtotal;
+        return detalle;
+    }
+
+    private IQueryable<Compra> ComprasPagadasDelCliente(int usuarioId)
+    {
+        return _persistencia.Compras.AsNoTracking().Where(compra =>
+            compra.UsuarioAsociadoId == usuarioId &&
+            compra.UsuarioAsociado.Rol == RolUsuario.Cliente &&
+            compra.EstadoCompra == EstadoCompra.PAGADA);
     }
 
     public CarritoDTO? VerCarrito(int usuarioId)

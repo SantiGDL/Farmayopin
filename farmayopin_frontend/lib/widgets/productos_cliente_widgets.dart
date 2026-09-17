@@ -179,17 +179,22 @@ class FiltrosProductos extends StatelessWidget {
     required this.productos,
     required this.categoria,
     required this.alSeleccionar,
+    this.soloCategoriasDisponibles = false,
   });
 
   final List<ProductoListado> productos;
   final String categoria;
   final ValueChanged<String> alSeleccionar;
+  final bool soloCategoriasDisponibles;
 
   @override
   Widget build(BuildContext context) {
     // Conservamos los filtros del diseño y añadimos las categorías reales.
     // Vitaminas puede no tener resultados: el enum actual aún no la incluye.
-    final List<String> categorias = ['Todos', 'Medicamentos', 'Vitaminas'];
+    final List<String> categorias = ['Todos'];
+    if (!soloCategoriasDisponibles) {
+      categorias.addAll(['Medicamentos', 'Vitaminas']);
+    }
     for (final ProductoListado producto in productos) {
       if (!categorias.contains(producto.categoria)) {
         categorias.add(producto.categoria);

@@ -359,6 +359,106 @@ public class ConsultasClienteTests : IDisposable
         Assert.Equal(HttpStatusCode.Unauthorized, (await _cliente.PostAsync("/api/controladorCliente/confirmarCompra", null)).StatusCode);
     }
 
+    private List<Compra> PrepararComprasHistoricas()
+    {
+        using IServiceScope alcance = _servidor.Services.CreateScope();
+        ManejadorPersistencia db = alcance.ServiceProvider.GetRequiredService<ManejadorPersistencia>();
+        Usuario ana = db.Usuarios.Single(usuario => usuario.Correo == "ana@example.com");
+        Usuario bruno = db.Usuarios.Single(usuario => usuario.Correo == "bruno@example.com");
+        Producto medicamento = db.Productos.Single(producto => producto.Codigo == "P1");
+        Producto higiene = db.Productos.Single(producto => producto.Codigo == "P2");
+        List<Compra> compras = new List<Compra>();
+        for (int indice = 0; indice < 5; indice++)
+        {
+            Usuario propietario = indice == 4 ? bruno : ana;
+            Compra compra = new Compra
+            {
+                UsuarioAsociadoId = propietario.Id,
+                CarritoAsociadoId = propietario.CarritoAsociadoId!.Value,
+                FechaCompra = new DateTime(2026, 5, 10 + indice, 13, 32, 0, DateTimeKind.Utc),
+                EstadoCompra = EstadoCompra.PAGADA,
+                PrecioTotal = 900m
+            };
+            compra.ListaDeLineasCompra.Add(new LineaDeCompra(2, 100m, "Nombre histórico") { ProductoAsociadoId = medicamento.Id });
+            compras.Add(compra);
+        }
+        compras[1].ListaDeLineasCompra.Add(new LineaDeCompra(1, 50m, "Jabón histórico") { ProductoAsociadoId = higiene.Id });
+        compras[1].PrecioTotal = 950m;
+        compras[2].EstadoCompra = EstadoCompra.PENDIENTE;
+        compras[3].EstadoCompra = EstadoCompra.CANCELADA;
+        db.Compras.AddRange(compras);
+        db.SaveChanges();
+        return compras;
+    }
+
+    [Fact]
+    public async Task HistoricoSinComprasDevuelveVacioYAmbasRutasExigenToken()
+    {
+        HttpResponseMessage respuesta = await Cambiar("vacio@example.com", HttpMethod.Get, "compras");
+        respuesta.EnsureSuccessStatusCode();
+        JsonElement compras = await respuesta.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0, compras.GetArrayLength());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _cliente.GetAsync("/api/controladorCliente/compras")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _cliente.GetAsync("/api/controladorCliente/compras/1")).StatusCode);
+    }
+
+    [Fact]
+    public async Task HistoricoListaSoloPagadasPropiasEnOrdenYConResumenHistorico()
+    {
+        List<Compra> guardadas = PrepararComprasHistoricas();
+        HttpResponseMessage respuesta = await Cambiar("ana@example.com", HttpMethod.Get, "compras?usuarioId=" + guardadas[4].UsuarioAsociadoId);
+        respuesta.EnsureSuccessStatusCode();
+        JsonElement compras = await respuesta.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, compras.GetArrayLength());
+        Assert.Equal(guardadas[1].Id, compras[0].GetProperty("id").GetInt32());
+        Assert.Equal(guardadas[0].Id, compras[1].GetProperty("id").GetInt32());
+        Assert.Equal(3, compras[0].GetProperty("cantidadProductos").GetInt32());
+        Assert.Equal(950m, compras[0].GetProperty("precioTotal").GetDecimal());
+        Assert.Contains("Nombre histórico", compras[0].GetProperty("nombresProductos").EnumerateArray().Select(nombre => nombre.GetString()));
+        Assert.Equal(guardadas[1].FechaCompra, compras[0].GetProperty("fechaCompra").GetDateTime());
+        Assert.EndsWith("Z", compras[0].GetProperty("fechaCompra").GetString());
+    }
+
+    [Fact]
+    public async Task HistoricoDetalleMantieneNombrePrecioCantidadYTotalAunqueCambieProducto()
+    {
+        List<Compra> guardadas = PrepararComprasHistoricas();
+        using IServiceScope alcance = _servidor.Services.CreateScope();
+        ManejadorPersistencia db = alcance.ServiceProvider.GetRequiredService<ManejadorPersistencia>();
+        Producto producto = db.Productos.Single(actual => actual.Codigo == "P1");
+        producto.Nombre = "Nuevo nombre del catálogo";
+        producto.Precio = 9999m;
+        db.SaveChanges();
+        HttpResponseMessage respuesta = await Cambiar("ana@example.com", HttpMethod.Get, "compras/" + guardadas[1].Id);
+        respuesta.EnsureSuccessStatusCode();
+        JsonElement detalle = await respuesta.Content.ReadFromJsonAsync<JsonElement>();
+        JsonElement lineas = detalle.GetProperty("lineas");
+        Assert.Equal(2, lineas.GetArrayLength());
+        Assert.Equal("Nombre histórico", lineas[0].GetProperty("producto").GetProperty("nombre").GetString());
+        Assert.Equal(100m, lineas[0].GetProperty("producto").GetProperty("precio").GetDecimal());
+        Assert.Equal(2, lineas[0].GetProperty("cantidad").GetInt32());
+        Assert.Equal("ANALGESICOS", lineas[0].GetProperty("producto").GetProperty("categoria").GetString());
+        Assert.Equal(250m, detalle.GetProperty("subtotal").GetDecimal());
+        Assert.Equal(700m, detalle.GetProperty("envio").GetDecimal());
+        Assert.Equal(guardadas[1].PrecioTotal, detalle.GetProperty("total").GetDecimal());
+        Assert.Equal(guardadas[1].FechaCompra, detalle.GetProperty("fechaCompra").GetDateTime());
+        Assert.Equal(3, db.LineasDeCarrito.Count());
+        Assert.Equal(12, db.Productos.AsNoTracking().Single(actual => actual.Id == producto.Id).Stock);
+    }
+
+    [Fact]
+    public async Task HistoricoDetalleRechazaComprasAjenasNoPagadasEInexistentesCon404()
+    {
+        List<Compra> guardadas = PrepararComprasHistoricas();
+        foreach (int id in new[] { guardadas[4].Id, guardadas[2].Id, guardadas[3].Id, 999999 })
+        {
+            HttpResponseMessage respuesta = await Cambiar("ana@example.com", HttpMethod.Get, "compras/" + id);
+            Assert.Equal(HttpStatusCode.NotFound, respuesta.StatusCode);
+            JsonElement error = await respuesta.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal("No se encontró esa compra en tu histórico.", error.GetProperty("mensaje").GetString());
+        }
+    }
+
     public void Dispose()
     {
         _cliente.Dispose();

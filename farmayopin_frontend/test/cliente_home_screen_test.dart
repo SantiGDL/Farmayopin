@@ -6,6 +6,7 @@ import 'package:farmayopin_frontend/screens/login_screen.dart';
 import 'package:farmayopin_frontend/controladores/controlador_cliente.dart';
 import 'package:farmayopin_frontend/screens/listar_productos_screen.dart';
 import 'package:farmayopin_frontend/screens/ver_carrito_screen.dart';
+import 'package:farmayopin_frontend/screens/historico_compras_screen.dart';
 import 'package:farmayopin_frontend/servicios/sesion_cliente.dart';
 
 import 'datos_cliente_prueba.dart';
@@ -59,16 +60,15 @@ void main() {
         await tester.tap(find.text(titulo));
         await tester.pumpAndSettle();
         if (titulo == 'Histórico de Compras') {
-          expect(find.byType(SnackBar), findsOneWidget);
-          await tester.pump(const Duration(seconds: 5));
+          expect(find.byType(HistoricoComprasScreen), findsOneWidget);
         } else {
           if (titulo == 'Ver Productos') {
             expect(find.byType(ListarProductosScreen), findsOneWidget);
           } else {
             expect(find.byType(VerCarritoScreen), findsOneWidget);
           }
-          tester.state<NavigatorState>(find.byType(Navigator)).pop();
         }
+        tester.state<NavigatorState>(find.byType(Navigator)).pop();
         await tester.pumpAndSettle();
       }
       await tester.ensureVisible(find.text('Cerrar sesión'));
