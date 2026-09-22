@@ -44,6 +44,7 @@ class ServicioGeneral {
           mensaje: 'Credenciales correctas.',
           rol: respuesta['rol'],
           token: respuesta['token'] as String?,
+          usuarioId: respuesta['usuarioId'] as int?,
         );
       }
       if (respuestaBackend.statusCode == 401) {

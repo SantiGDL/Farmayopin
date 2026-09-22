@@ -1,11 +1,18 @@
+import '../widgets/encabezado_cliente.dart';
+import '../widgets/presentacion_cliente.dart';
+import '../widgets/buscador_productos.dart';
+import '../widgets/filtros_productos.dart';
+import '../widgets/imagen_producto.dart';
+import '../widgets/volver_cliente.dart';
+import '../widgets/fecha_compra_cliente.dart';
+import '../widgets/error_consulta_compra.dart';
+import '../utils/formatear_importe.dart';
 import 'package:flutter/material.dart';
 
 import '../controladores/controlador_cliente.dart';
 import '../dtos/detalle_compra.dart';
 import '../dtos/producto_listado.dart';
 import '../servicios/servicio_cliente.dart';
-import '../widgets/compras_cliente_widgets.dart';
-import '../widgets/productos_cliente_widgets.dart';
 
 class DetalleCompraScreen extends StatefulWidget {
   const DetalleCompraScreen({
@@ -134,6 +141,8 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (actual.desdeCopiaLocal)
+          const Text('Sin conexión con el servidor. Mostrando la última copia local.'),
         BuscadorProductos(
           alCambiar: (String texto) => setState(() {
             busqueda = texto;

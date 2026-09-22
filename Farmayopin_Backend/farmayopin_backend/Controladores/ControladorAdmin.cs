@@ -30,6 +30,36 @@ public class ControladorAdmin : ControllerBase
     
     
 
+    [HttpPost("subirFoto")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 6 * 1024 * 1024)]
+    public async Task<IActionResult> SubirFoto(
+        [FromForm] IFormFile foto,
+        [FromServices] IWebHostEnvironment entorno,
+        CancellationToken cancelacion)
+    {
+        try
+        {
+            string carpetaWeb = entorno.WebRootPath ?? Path.Combine(entorno.ContentRootPath, "wwwroot");
+            string fotoUrl = await _servicioAdmin.SubirFoto(foto, carpetaWeb, cancelacion);
+            return StatusCode(201, new { fotoUrl });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { mensaje = ex.Message });
+        }
+        catch (OperationCanceledException) when (cancelacion.IsCancellationRequested)
+        {
+            return StatusCode(499);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al subir la foto del producto");
+            return StatusCode(500, new { mensaje = "No se pudo guardar la foto." });
+        }
+    }
+
     [HttpPost("crearProducto")]
     public IActionResult CrearProducto([FromBody] CrearProductoDTO nuevoProducto)
     {
@@ -101,4 +131,22 @@ public class ControladorAdmin : ControllerBase
     }
 
 
+    [HttpGet("productos/{productoId:int}/compras")]
+    public IActionResult HistoricoProducto(int productoId)
+    {
+        if (productoId <= 0)
+            return BadRequest(new { mensaje = "El producto no es válido." });
+        try
+        {
+            var compras = _servicioAdmin.HistoricoProducto(productoId);
+            if (compras == null)
+                return NotFound(new { mensaje = "No se encontró el producto." });
+            return Ok(compras);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al consultar compras del producto {ProductoId}", productoId);
+            return StatusCode(500, new { mensaje = "No se pudieron obtener las compras del producto." });
+        }
+    }
 }

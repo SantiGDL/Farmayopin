@@ -35,6 +35,7 @@ La respuesta recorre el camino inverso. La agrupación replica la forma de pensa
 - Dibujan campos, textos, imágenes, botones y distribución visual.
 - Conectan eventos con el controlador correspondiente.
 - Dividen el diseño en métodos pequeños: encabezado, bienvenida, opciones, etc.
+- Cada widget reutilizable de `lib/widgets/` tiene su propio archivo, con nombre en snake_case. Las pantallas importan solamente los componentes que necesitan. No agrupar varios widgets públicos en un único archivo.
 - Pueden calcular anchos y adaptar el diseño: eso es presentación.
 - No envían HTTP, interpretan JSON ni deciden reglas de negocio.
 - En pantallas con estado, crean y liberan su controlador y escuchan sus cambios.
@@ -149,7 +150,7 @@ Comprobar siempre el código actual: esta sección puede quedar desactualizada.
 - Login conectado al endpoint de credenciales y navegación por rol.
 - Panel administrador: `AdminHomeScreen`.
 - Panel cliente: `ClienteHomeScreen`, ya conectado para el rol `Cliente`.
-- Crear producto sigue siendo una maqueta; los accesos pendientes muestran avisos.
+- Crear producto está conectado: `ControladorCrearProducto` coordina el formulario administrativo y usa `ServicioAdmin`. Foto opcional mediante `file_selector`, subida multipart y creación JSON. Ver `docs/crear_producto.md`.
 - Catálogo, carrito e histórico del cliente todavía no están implementados.
 - No hay sesión/token ni protección completa de endpoints. Navegar al panel no equivale a completar esa protección.
 - Los íconos compartidos están en **`assets/Iconos/`** (respetar mayúsculas).

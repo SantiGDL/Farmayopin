@@ -1,10 +1,16 @@
+import '../widgets/paginacion_compras.dart';
+import '../widgets/encabezado_cliente.dart';
+import '../widgets/presentacion_cliente.dart';
+import '../widgets/buscador_productos.dart';
+import '../widgets/volver_cliente.dart';
+import '../widgets/fecha_compra_cliente.dart';
+import '../widgets/error_consulta_compra.dart';
+import '../utils/formatear_importe.dart';
 import 'package:flutter/material.dart';
 
 import '../controladores/controlador_cliente.dart';
 import '../dtos/resumen_compra.dart';
 import '../servicios/servicio_cliente.dart';
-import '../widgets/compras_cliente_widgets.dart';
-import '../widgets/productos_cliente_widgets.dart';
 
 class HistoricoComprasScreen extends StatefulWidget {
   const HistoricoComprasScreen({
@@ -51,6 +57,9 @@ class _HistoricoComprasScreenState extends State<HistoricoComprasScreen> {
         sesionVencida = true;
         errorCarga = 'Volvé a iniciar sesión para consultar tus compras.';
       });
+    } on ErrorOperacionCliente catch (error) {
+      if (!mounted) return;
+      setState(() { errorCarga = error.mensaje; });
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -109,6 +118,8 @@ class _HistoricoComprasScreenState extends State<HistoricoComprasScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
+                        if (compras.any((compra) => compra.desdeCopiaLocal))
+                          const Padding(padding: EdgeInsets.all(8), child: Text('Sin conexión con el servidor. Mostrando la última copia local.')),
                         _contenido(),
                       ],
                     ),
@@ -259,56 +270,8 @@ class _HistoricoComprasScreenState extends State<HistoricoComprasScreen> {
   }
 
   Widget _paginacion(int paginas) {
-    final List<Widget> botones = [];
-    int anterior = 0;
-    for (int numero = 1; numero <= paginas; numero++) {
-      if (numero != 1 && numero != paginas && (numero - pagina).abs() > 1) {
-        continue;
-      }
-      if (anterior > 0 && numero - anterior > 1) botones.add(const Text('...'));
-      final int seleccionada = numero;
-      botones.add(
-        ChoiceChip(
-          label: Text('$numero'),
-          selected: numero == pagina,
-          showCheckmark: false,
-          selectedColor: const Color(0xFF50BDB5),
-          visualDensity: VisualDensity.compact,
-          onSelected: (bool valor) => setState(() {
-            pagina = seleccionada;
-          }),
-        ),
-      );
-      anterior = numero;
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: 20),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 4,
-        children: [
-          IconButton(
-            tooltip: 'Página anterior',
-            onPressed: pagina > 1
-                ? () => setState(() {
-                    pagina--;
-                  })
-                : null,
-            icon: const Icon(Icons.chevron_left),
-          ),
-          ...botones,
-          IconButton(
-            tooltip: 'Página siguiente',
-            onPressed: pagina < paginas
-                ? () => setState(() {
-                    pagina++;
-                  })
-                : null,
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ],
-      ),
-    );
+    return PaginacionCompras(pagina: pagina, paginas: paginas, alCambiar: (int numero) {
+      setState(() { pagina = numero; });
+    });
   }
 }

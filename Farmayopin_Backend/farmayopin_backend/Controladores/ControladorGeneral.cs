@@ -43,11 +43,11 @@ public class ControladorGeneral : ControllerBase
         if (resultado == ResultadoConsultarRolUsuario.RolCliente)
         {
             string token = _sesionCliente.CrearToken(usuarioId!.Value);
-            return Ok(new { rol = "Cliente", token });
+            return Ok(new { rol = "Cliente", token, usuarioId });
         }
         else if (resultado == ResultadoConsultarRolUsuario.RolAdmin)
         {
-            return Ok(new { rol = "Admin" });       //Envio JSON con Rol Admin  
+            return Ok(new { rol = "Admin", usuarioId });
         }
         else if (resultado == ResultadoConsultarRolUsuario.NoExisteUsuario ||
                  resultado == ResultadoConsultarRolUsuario.PassNoCoincide)

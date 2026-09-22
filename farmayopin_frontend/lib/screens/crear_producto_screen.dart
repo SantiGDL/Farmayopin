@@ -1,21 +1,52 @@
+import '../widgets/campos_producto.dart';
 import 'package:flutter/material.dart';
 
-import '../controladores/controlador_admin.dart';
+import '../controladores/controlador_crear_producto.dart';
+import '../controladores/controlador_general.dart';
+import '../widgets/foto_producto_selector.dart';
 
-// Esta pantalla es una guía VISUAL: todavía no envía datos al backend.
-// Pensá en los widgets como etiquetas HTML que se anidan:
-// Column = elementos en vertical; Row = elementos en horizontal.
-class CrearProductoScreen extends StatelessWidget {
-  const CrearProductoScreen({super.key});
+// La pantalla dibuja el formulario y conecta sus eventos al controlador.
+class CrearProductoScreen extends StatefulWidget {
+  const CrearProductoScreen({super.key, this.controlador});
+  final ControladorCrearProducto? controlador;
 
-  final controlador = const ControladorAdmin();
+  @override
+  State<CrearProductoScreen> createState() => _CrearProductoScreenState();
+}
 
-  // Como una variable de CSS: reutilizamos el mismo color.
-  static const verde = Color(0xFF00AAA5);
+class _CrearProductoScreenState extends State<CrearProductoScreen> {
+  late final ControladorCrearProducto controlador;
+
+  @override
+  void initState() {
+    super.initState();
+    controlador = widget.controlador ?? ControladorCrearProducto();
+  }
+
+  @override
+  void dispose() {
+    controlador.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     // Scaffold es la estructura de la pantalla; body es su contenido.
+    return ListenableBuilder(
+      listenable: controlador,
+      builder: (context, child) {
+        return PopScope(
+          canPop: !controlador.ocupado,
+          child: AbsorbPointer(
+            absorbing: controlador.ocupado,
+            child: contenido(context),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget contenido(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         // Permite desplazar el formulario si la pantalla es pequeña
@@ -26,120 +57,65 @@ class CrearProductoScreen extends StatelessWidget {
             // Equivale a un max-width de CSS. En celular ocupa lo disponible.
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  encabezado(context),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => controlador.volverAlMenu(context),
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Volver'),
+              child: Form(
+                key: controlador.formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    encabezado(context),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => controlador.cancelar(context),
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text('Volver'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  tarjetaPresentacion(),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 8),
+                    tarjetaPresentacion(),
+                    const SizedBox(height: 24),
 
-                  // 1. Campo que ocupa todo el ancho.
-                  campoTexto(
-                    etiqueta: 'Nombre del producto',
-                    ayuda: 'Ingresá el nombre del producto',
-                    icono: Icons.sell_outlined,
-                  ),
-                  const SizedBox(height: 16),
+                    campoTexto(
+                      etiqueta: 'Código',
+                      ayuda: 'Ingresá un código único',
+                      icono: Icons.qr_code,
+                      campo: controlador.codigo,
+                      validar: controlador.validarObligatorio,
+                    ),
+                    const SizedBox(height: 16),
+                    CamposProducto(controlador: controlador),
+                    const SizedBox(height: 16),
+                    const Text('Foto del producto'),
+                    const SizedBox(height: 6),
+                    zonaFoto(context),
+                    const SizedBox(height: 20),
 
-                  // 2. Dos campos en una fila.
-                  // Expanded reparte el ancho disponible en partes iguales.
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: campoTexto(
-                          etiqueta: 'Precio',
-                          ayuda: '0,00',
-                          icono: Icons.attach_money,
-                          teclado: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
+                    // onPressed equivale a la función de un onclick.
+                    FilledButton.icon(
+                      onPressed: controlador.ocupado
+                          ? null
+                          : () => controlador.guardarProducto(context),
+                      icon: const Icon(Icons.save_outlined),
+                      label: Text(
+                        controlador.ocupado
+                            ? controlador.progreso
+                            : 'Guardar producto',
+                      ),
+                      style: FilledButton.styleFrom(
+                        textStyle: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: campoTexto(
-                          etiqueta: 'Stock',
-                          ayuda: '0',
-                          icono: Icons.inventory_2_outlined,
-                          teclado: TextInputType.number,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 3. Un select, como en HTML. Categorías de ejemplo.
-                  const Text('Categoría'),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    isExpanded: true,
-                    decoration: decoracionCampo(
-                      'Seleccioná una categoría',
-                      Icons.category_outlined,
                     ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'medicamentos',
-                        child: Text('Medicamentos'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'higiene',
-                        child: Text('Higiene personal'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'cuidado',
-                        child: Text('Cuidado personal'),
-                      ),
-                    ],
-                    // El widget muestra la selección por sí mismo.
-                    // Más adelante guardaremos aquí el ID para enviarlo a C#.
-                    onChanged: (valor) {},
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 4. Varias líneas: similar a un textarea.
-                  campoTexto(
-                    etiqueta: 'Descripción',
-                    ayuda: 'Ingresá una descripción del producto…',
-                    icono: Icons.description_outlined,
-                    lineas: 3,
-                    teclado: TextInputType.multiline,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Foto del producto'),
-                  const SizedBox(height: 6),
-                  zonaFoto(context),
-                  const SizedBox(height: 20),
-
-                  // onPressed equivale a la función de un onclick.
-                  FilledButton.icon(
-                    onPressed: () => controlador.guardarProducto(context),
-                    icon: const Icon(Icons.save_outlined),
-                    label: const Text('Guardar producto'),
-                    style: FilledButton.styleFrom(
-                      textStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: () => controlador.cancelar(context),
+                      child: const Text('Cancelar'),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton(
-                    onPressed: () => controlador.cancelarProducto(context),
-                    child: const Text('Cancelar'),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -165,7 +141,7 @@ class CrearProductoScreen extends StatelessWidget {
           ],
         ),
         TextButton.icon(
-          onPressed: () => controlador.cerrarSesionDesdeProducto(context),
+          onPressed: () => ControladorGeneral.cerrarSesion(context),
           icon: const Icon(Icons.logout, size: 18),
           label: const Text('Cerrar sesión'),
           style: TextButton.styleFrom(
@@ -221,6 +197,8 @@ class CrearProductoScreen extends StatelessWidget {
     required String etiqueta,
     required String ayuda,
     required IconData icono,
+    required TextEditingController campo,
+    String? Function(String?)? validar,
     int lineas = 1,
     TextInputType teclado = TextInputType.text,
   }) {
@@ -230,6 +208,8 @@ class CrearProductoScreen extends StatelessWidget {
         Text(etiqueta),
         const SizedBox(height: 6),
         TextFormField(
+          controller: campo,
+          validator: validar,
           maxLines: lineas,
           keyboardType: teclado,
           style: const TextStyle(fontSize: 14),
@@ -250,23 +230,13 @@ class CrearProductoScreen extends StatelessWidget {
   }
 
   Widget zonaFoto(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () => controlador.seleccionarFoto(context),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.all(20),
-        backgroundColor: const Color(0xFFF5FAF9),
-        side: const BorderSide(color: Color(0xFF9ADBD4)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.cloud_upload_outlined, size: 36),
-          SizedBox(height: 8),
-          Text('Subí una foto del producto'),
-          SizedBox(height: 4),
-          Text('JPG o PNG · Máximo 5 MB', style: TextStyle(fontSize: 12)),
-        ],
-      ),
+    return FotoProductoSelector(
+      bytes: controlador.fotoBytes,
+      nombre: controlador.nombreFoto,
+      seleccionar: controlador.ocupado
+          ? null
+          : () => controlador.seleccionarFoto(context),
+      quitar: controlador.ocupado ? null : controlador.quitarFoto,
     );
   }
 }

@@ -1,10 +1,16 @@
+import '../widgets/encabezado_cliente.dart';
+import '../widgets/presentacion_cliente.dart';
+import '../widgets/buscador_productos.dart';
+import '../widgets/filtros_productos.dart';
+import '../widgets/tarjeta_producto_cliente.dart';
+import '../widgets/volver_cliente.dart';
+import '../widgets/resumen_carrito_cliente.dart';
 import 'package:flutter/material.dart';
 
 import '../controladores/controlador_cliente.dart';
 import '../dtos/carrito_cliente.dart';
 import '../dtos/producto_listado.dart';
 import '../servicios/servicio_cliente.dart';
-import '../widgets/productos_cliente_widgets.dart';
 
 class VerCarritoScreen extends StatefulWidget {
   const VerCarritoScreen({
@@ -61,6 +67,9 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
         sesionVencida = true;
         errorCarga = 'Volvé a iniciar sesión para consultar tu carrito.';
       });
+    } on ErrorOperacionCliente catch (error) {
+      if (!mounted) return;
+      setState(() { errorCarga = error.mensaje; });
     } catch (_) {
       if (!mounted) {
         return;
@@ -209,6 +218,8 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (carritoActual.desdeCopiaLocal)
+          const Padding(padding: EdgeInsets.all(8), child: Text('Carrito guardado en este dispositivo. Reconectate para modificarlo o comprar.')),
         if (visibles.isEmpty)
           const Padding(
             padding: EdgeInsets.all(20),
@@ -231,7 +242,7 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
         const SizedBox(height: 14),
         Center(
           child: FilledButton.icon(
-            onPressed: guardando
+            onPressed: guardando || carritoActual.desdeCopiaLocal
                 ? null
                 : () async {
                     await widget.controlador.pagarCarrito(
@@ -310,7 +321,7 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
       color = Colors.redAccent;
     }
     return IconButton(
-      onPressed: guardando ? null : accion,
+      onPressed: guardando || carrito?.desdeCopiaLocal == true ? null : accion,
       tooltip: descripcion,
       icon: Icon(icono, size: 18, color: color),
       padding: const EdgeInsets.all(3),

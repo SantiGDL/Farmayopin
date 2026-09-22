@@ -13,6 +13,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(const FarmayopinApp());
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Ingresar'));
       await tester.pump();
       expect(find.text('Ingresá tu correo electrónico.'), findsOneWidget);

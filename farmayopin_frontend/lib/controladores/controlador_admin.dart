@@ -1,3 +1,7 @@
+import '../screens/editar_producto_screen.dart';
+import '../dtos/compra_producto.dart';
+import '../screens/historico_producto_screen.dart';
+import '../utils/formatear_importe.dart';
 import '../dtos/producto_listado.dart';
 import '../screens/listar_productos_screen.dart';
 import '../screens/detalle_producto_screen.dart';
@@ -15,11 +19,59 @@ class ControladorAdmin {
 
   final ServicioAdmin servicio;
 
+  void abrirHistoricoProducto(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => HistoricoProductoScreen(controlador: this),
+    ));
+  }
+
+  Future<ProductoListado?> seleccionarProductoHistorial(BuildContext context) {
+    return Navigator.of(context).push<ProductoListado>(MaterialPageRoute(
+      builder: (_) => ListarProductosScreen(
+        seleccionarParaHistorial: true,
+        controladorAdmin: this,
+      ),
+    ));
+  }
+
+  Future<ProductoListado?> seleccionarProductoEdicion(BuildContext context) {
+    return Navigator.of(context).push<ProductoListado>(MaterialPageRoute(
+      builder: (_) => ListarProductosScreen(
+        seleccionarParaEdicion: true, controladorAdmin: this,
+      ),
+    ));
+  }
+
+  Future<ProductoListado?> abrirEditarProducto(BuildContext context) {
+    return Navigator.of(context).push<ProductoListado>(MaterialPageRoute(
+      builder: (_) => EditarProductoScreen(controladorAdmin: this),
+    ));
+  }
+
+  void devolverProducto(BuildContext context, ProductoListado producto) {
+    Navigator.of(context).pop(producto);
+  }
+
+  Future<List<CompraProducto>> cargarHistoricoProducto(int productoId) {
+    return servicio.historicoProducto(productoId);
+  }
+
+  List<CompraProducto> filtrarHistoricoProducto(List<CompraProducto> compras, String busqueda) {
+    final String texto = busqueda.trim().toLowerCase();
+    return compras.where((CompraProducto compra) {
+      final DateTime fecha = compra.fechaCompra;
+      final String datos = '${compra.nombreCliente} ${compra.correoCliente} '
+          '${compra.cantidadProducto} ${formatearImporte(compra.precioUnitario)} '
+          '${fecha.day}/${fecha.month}/${fecha.year} ${fecha.toIso8601String()}';
+      return datos.toLowerCase().contains(texto);
+    }).toList();
+  }
+
   void abrirListadoProductos(BuildContext referenciaPantalla) {
     Navigator.of(referenciaPantalla).push(
       MaterialPageRoute(
         builder: (context) {
-          return const ListarProductosScreen();
+          return ListarProductosScreen(controladorAdmin: this);
         },
       ),
     );
@@ -50,19 +102,21 @@ class ControladorAdmin {
     return resultado;
   }
 
-  void verProducto(BuildContext referenciaPantalla, ProductoListado producto) {
-    Navigator.of(referenciaPantalla).push(
+  Future<void> verProducto(BuildContext referenciaPantalla, ProductoListado producto) async {
+    await Navigator.of(referenciaPantalla).push(
       MaterialPageRoute(
-        builder: (context) => DetalleProductoScreen(producto: producto),
+        builder: (context) => DetalleProductoScreen(producto: producto, controladorAdmin: this),
       ),
     );
   }
 
-  void editarProducto(
+  Future<ProductoListado?> editarProducto(
     BuildContext referenciaPantalla,
     ProductoListado producto,
   ) {
-    mostrarPendiente(referenciaPantalla, 'Editar ${producto.nombre}');
+    return Navigator.of(referenciaPantalla).push<ProductoListado>(MaterialPageRoute(
+      builder: (_) => EditarProductoScreen(producto: producto, controladorAdmin: this),
+    ));
   }
 
   void abrirCrearProducto(BuildContext context) {
@@ -87,22 +141,6 @@ class ControladorAdmin {
     ControladorGeneral.cerrarSesion(context);
   }
 
-  void guardarProducto(BuildContext context) {
-    _mostrarAviso(context, servicio.guardarProducto());
-  }
-
-  void cancelarProducto(BuildContext context) {
-    _mostrarAviso(context, servicio.cancelarProducto());
-  }
-
-  void seleccionarFoto(BuildContext context) {
-    _mostrarAviso(context, servicio.seleccionarFoto());
-  }
-
-  void cerrarSesionDesdeProducto(BuildContext context) {
-    _mostrarAviso(context, servicio.cerrarSesionDesdeProducto());
-  }
-
   void _mostrarAviso(
     BuildContext context,
     String mensaje, {
@@ -112,7 +150,4 @@ class ControladorAdmin {
     if (reemplazar) messenger.hideCurrentSnackBar();
     messenger.showSnackBar(SnackBar(content: Text(mensaje)));
   }
-
-
-  
 }

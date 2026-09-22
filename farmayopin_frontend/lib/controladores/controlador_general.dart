@@ -36,65 +36,41 @@ class ControladorGeneral extends ChangeNotifier {
     notifyListeners();
   }
 
-  //Iniciar Sesion
-  Future<void> iniciarSesion(BuildContext referenciaPantalla) async{
-     
-    // Obtenego estado del formulario.
+  Future<void> iniciarSesion(BuildContext referenciaPantalla) async {
+    if (enviando) return;
     final FormState? formulario = formKey.currentState;
-
-    // Si el formulario no existe, termino.
-    if (formulario == null) return;
-    
-    // Reviso los campos y muestro los errores si los hay.
-    final bool formularioValido = formulario.validate();
-    
-    //Si el formulario tiene errores termio tambien
-    if (formularioValido == false) return;
-    
-    // Si llego acá, puedo consultar al backend.
-
-    final String correo = correoController.text;
-    final String password = passwordController.text;
-    final ResultadoIniciarSesion resultado =
-    await _servicio.iniciarSesion(correo, password);
-
-    // Mientras espero, el usuario pudo haber cerrado la pantalla.
-    if (referenciaPantalla.mounted == false) return;
-  
-    // Si el servicio informa un fallo, mostramos el mensaje y terminamos.
-    if (resultado.exito == false) 
-    {
-      _mostrarMensaje( referenciaPantalla, resultado.mensaje, esError: true);
-      return;
+    if (formulario == null || !formulario.validate()) return;
+    enviando = true;
+    notifyListeners();
+    try {
+      final String correo = correoController.text;
+      final String password = passwordController.text;
+      final ResultadoIniciarSesion resultado = await _servicio.iniciarSesion(correo, password);
+      if (_cerrado || !referenciaPantalla.mounted) return;
+      if (!resultado.exito) {
+        _mostrarMensaje(referenciaPantalla, resultado.mensaje, esError: true);
+        return;
+      }
+      try {
+        await SesionCliente.guardar(resultado.usuarioId ?? 0, resultado.rol ?? '', resultado.token);
+      } catch (_) {
+        if (referenciaPantalla.mounted) {
+          _mostrarMensaje(referenciaPantalla, 'No se pudo guardar la sesión. Intentá nuevamente.', esError: true);
+        }
+        return;
+      }
+      if (_cerrado || !referenciaPantalla.mounted) return;
+      passwordController.clear();
+      final Widget pantalla = resultado.rol == 'Admin'
+          ? const AdminHomeScreen() : const ClienteHomeScreen();
+      Navigator.of(referenciaPantalla).pushReplacement(MaterialPageRoute(builder: (_) => pantalla));
+    } finally {
+      if (!_cerrado) {
+        enviando = false;
+        notifyListeners();
+      }
     }
-
-    if (resultado.rol == 'Admin') {
-      SesionCliente.cerrar();
-      Navigator.of(referenciaPantalla).pushReplacement(   //Desde la pantalla actual reemplazo:
-        MaterialPageRoute(                                //defino ruta de pantalla de reemplazo
-          builder: (context) 
-          {
-            return const AdminHomeScreen();
-          }
-      ));
-
-    }
-
-    if (resultado.rol == 'Cliente') {
-      SesionCliente.token = resultado.token;
-      Navigator.of(referenciaPantalla).pushReplacement(
-        MaterialPageRoute(builder: (context) {
-          return const ClienteHomeScreen();
-        }),
-      );
-      return;
-    }
-  
-  
-  
-  
   }
-  
 
   //Registrar Cliente
   Future<void> registrarCliente(BuildContext context) async {
@@ -127,8 +103,18 @@ class ControladorGeneral extends ChangeNotifier {
     Navigator.of(context).pop();
   }
 
-  static void cerrarSesion(BuildContext context) {
-    SesionCliente.cerrar();
+  static Future<void> cerrarSesion(BuildContext context) async {
+    try {
+      await SesionCliente.cerrar();
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('No se pudo borrar la sesión guardada. Intentá cerrar sesión nuevamente.'),
+        ));
+      }
+      return;
+    }
+    if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,

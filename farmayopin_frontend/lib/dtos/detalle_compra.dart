@@ -28,10 +28,12 @@ class DetalleCompra {
     this.cantidadProductos,
     this.subtotal,
     this.envio,
-    this.total,
-  );
+    this.total, {
+    this.desdeCopiaLocal = false,
+  });
 
   final int id;
+  final bool desdeCopiaLocal;
   final DateTime fechaCompra;
   final List<LineaCompra> lineas;
   final int cantidadProductos;
@@ -52,6 +54,7 @@ class DetalleCompra {
       (datos['subtotal'] as num).toDouble(),
       (datos['envio'] as num).toDouble(),
       (datos['total'] as num).toDouble(),
+      desdeCopiaLocal: datos['desdeCopiaLocal'] == true,
     );
   }
 }

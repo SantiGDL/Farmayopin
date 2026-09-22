@@ -54,7 +54,7 @@ Esta refactorización conserva el alcance anterior:
 - Registro: conectado al backend en `http://localhost:5206`.
 - Login: conectado a `consultarRolUsuario`; el controlador abre el panel de Admin o Cliente según el resultado.
 - Admin: abre el formulario de producto; las demás operaciones conservan sus avisos.
-- Crear producto: sigue siendo una maqueta, sin guardado ni selección de fotos.
+- Crear producto: formulario conectado mediante `ControladorCrearProducto` y `ServicioAdmin`, con foto opcional, subida multipart, creación JSON y diálogo de resultado. Ver [el recorrido completo](docs/crear_producto.md).
 - Cliente: panel conectado al login; catálogo, carrito e histórico muestran avisos de función pendiente.
 - Cerrar sesión desde el panel: vuelve al login; todavía no hay sesión/token.
 
