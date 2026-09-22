@@ -1,9 +1,14 @@
+import '../widgets/encabezado_cliente.dart';
+import '../widgets/presentacion_cliente.dart';
+import '../widgets/imagen_producto.dart';
+import '../widgets/volver_cliente.dart';
+import '../widgets/resumen_carrito_cliente.dart';
+import '../utils/formatear_importe.dart';
 import 'package:flutter/material.dart';
 
 import '../controladores/controlador_cliente.dart';
 import '../dtos/carrito_cliente.dart';
 import '../servicios/servicio_cliente.dart';
-import '../widgets/productos_cliente_widgets.dart';
 
 class ConfirmarCompraScreen extends StatefulWidget {
   const ConfirmarCompraScreen({
@@ -38,6 +43,9 @@ class _ConfirmarCompraScreenState extends State<ConfirmarCompraScreen> {
     });
     try {
       final CarritoCliente recibido = await widget.controlador.cargarCarrito();
+      if (recibido.desdeCopiaLocal) {
+        throw const ErrorOperacionCliente('Necesitás conexión con el servidor para confirmar la compra.');
+      }
       if (mounted) {
         setState(() {
           carrito = recibido;
@@ -50,6 +58,8 @@ class _ConfirmarCompraScreenState extends State<ConfirmarCompraScreen> {
           errorCarga = 'Volvé a iniciar sesión para confirmar tu compra.';
         });
       }
+    } on ErrorOperacionCliente catch (error) {
+      if (mounted) setState(() { errorCarga = error.mensaje; });
     } catch (_) {
       if (mounted) {
         setState(() {

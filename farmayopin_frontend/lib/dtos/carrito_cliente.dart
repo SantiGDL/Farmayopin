@@ -32,9 +32,11 @@ class CarritoCliente {
     this.cantidadProductos,
     this.subtotal,
     this.envio,
-    this.total,
-  );
+    this.total, {
+    this.desdeCopiaLocal = false,
+  });
 
+  final bool desdeCopiaLocal;
   final int? id;
   final List<LineaCarritoCliente> lineas;
   final int cantidadProductos;
@@ -57,6 +59,7 @@ class CarritoCliente {
       (datos['subtotal'] as num).toDouble(),
       (datos['envio'] as num?)?.toDouble(),
       (datos['total'] as num?)?.toDouble(),
+      desdeCopiaLocal: datos['desdeCopiaLocal'] == true,
     );
   }
 }

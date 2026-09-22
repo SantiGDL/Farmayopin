@@ -459,6 +459,49 @@ public class ConsultasClienteTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task HistoricoAdminFiltraPorIdIncluyeClientesYConservaPreciosHistoricos()
+    {
+        List<Compra> guardadas = PrepararComprasHistoricas();
+        using IServiceScope alcance = _servidor.Services.CreateScope();
+        ManejadorPersistencia db = alcance.ServiceProvider.GetRequiredService<ManejadorPersistencia>();
+        Producto producto = db.Productos.Single(actual => actual.Codigo == "P1");
+        producto.Precio = 9999m;
+        producto.Codigo = "SKU-NO-ES-ID";
+        db.SaveChanges();
+
+        HttpResponseMessage respuesta = await _cliente.GetAsync($"/api/controladorAdmin/productos/{producto.Id}/compras");
+        respuesta.EnsureSuccessStatusCode();
+        JsonElement compras = await respuesta.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(5, compras.GetArrayLength());
+        Assert.Equal("bruno@example.com", compras[0].GetProperty("correoCliente").GetString());
+        Assert.Equal("Bruno", compras[0].GetProperty("nombreCliente").GetString());
+        Assert.Equal("ana@example.com", compras[1].GetProperty("correoCliente").GetString());
+        for (int indice = 0; indice < 5; indice++)
+        {
+            Assert.Equal(guardadas[4 - indice].FechaCompra, compras[indice].GetProperty("fechaCompra").GetDateTime());
+            Assert.EndsWith("Z", compras[indice].GetProperty("fechaCompra").GetString());
+            Assert.Equal(2, compras[indice].GetProperty("cantidadProducto").GetInt32());
+            Assert.Equal(100m, compras[indice].GetProperty("precioUnitario").GetDecimal());
+        }
+        int otroId = db.Productos.Single(actual => actual.Codigo == "P2").Id;
+        JsonElement otras = await _cliente.GetFromJsonAsync<JsonElement>($"/api/controladorAdmin/productos/{otroId}/compras");
+        Assert.Equal(1, otras.GetArrayLength());
+        Assert.Equal(50m, otras[0].GetProperty("precioUnitario").GetDecimal());
+    }
+
+    [Fact]
+    public async Task HistoricoAdminDistingueProductoSinComprasInexistenteEIdInvalido()
+    {
+        using IServiceScope alcance = _servidor.Services.CreateScope();
+        ManejadorPersistencia db = alcance.ServiceProvider.GetRequiredService<ManejadorPersistencia>();
+        int id = db.Productos.First().Id;
+        JsonElement vacias = await _cliente.GetFromJsonAsync<JsonElement>($"/api/controladorAdmin/productos/{id}/compras");
+        Assert.Equal(0, vacias.GetArrayLength());
+        Assert.Equal(HttpStatusCode.NotFound, (await _cliente.GetAsync("/api/controladorAdmin/productos/999999/compras")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await _cliente.GetAsync("/api/controladorAdmin/productos/0/compras")).StatusCode);
+    }
+
     public void Dispose()
     {
         _cliente.Dispose();

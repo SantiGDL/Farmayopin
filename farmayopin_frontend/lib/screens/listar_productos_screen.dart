@@ -1,21 +1,30 @@
+import '../widgets/encabezado_admin.dart';
+import '../widgets/encabezado_cliente.dart';
+import '../widgets/presentacion_cliente.dart';
+import '../widgets/buscador_productos.dart';
+import '../widgets/filtros_productos.dart';
+import '../widgets/tarjeta_producto_cliente.dart';
 import 'package:flutter/material.dart';
 
 import '../controladores/controlador_admin.dart';
 import '../dtos/producto_listado.dart';
 import '../config/api_config.dart';
 import '../controladores/controlador_cliente.dart';
-import '../widgets/productos_cliente_widgets.dart';
 
 //ListarProductosScreen define el widget y recibe su configuración.
 class ListarProductosScreen extends StatefulWidget {
   const ListarProductosScreen({
     super.key,
     this.esCliente = false,
+    this.seleccionarParaHistorial = false,
+    this.seleccionarParaEdicion = false,
     this.controladorAdmin = const ControladorAdmin(),
     this.controladorCliente = const ControladorCliente(),
   });
 
   final bool esCliente;
+  final bool seleccionarParaHistorial;
+  final bool seleccionarParaEdicion;
   final ControladorAdmin controladorAdmin;
   final ControladorCliente controladorCliente;
 
@@ -214,41 +223,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
         },
       );
     }
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 12,
-      runSpacing: 12,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.asset(
-              'assets/images/farmayopin_logo.png',
-              width: 100,
-              semanticLabel: 'Farmayopin',
-            ),
-            const Text(
-              'Administrador',
-              style: TextStyle(
-                color: Colors.grey,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-        TextButton.icon(
-          onPressed: () => controladorAdmin.cerrarSesion(context),
-          icon: const Icon(Icons.logout),
-          label: const Text('Cerrar sesión'),
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.black,
-            backgroundColor: const Color(0xFFEEEEEE),
-          ),
-        ),
-      ],
-    );
+    return EncabezadoAdmin(cerrarSesion: () => controladorAdmin.cerrarSesion(context));
   }
 
   // Muestra el título del listado, su descripción y la ilustración del administrador.
@@ -263,8 +238,10 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Listado de productos',
+          Text(
+            widget.seleccionarParaHistorial
+                ? 'Selección de Producto Historial'
+                : 'Listado de productos',
             style: TextStyle(
               fontSize: 21,
               fontWeight: FontWeight.bold,
@@ -393,6 +370,23 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
 
   // Organiza los datos y las acciones del producto según el espacio disponible.
   Widget _filaProducto(ProductoListado producto) {
+    if (widget.seleccionarParaHistorial || widget.seleccionarParaEdicion) {
+      return Material(
+        color: const Color(0xFFFFFDFD),
+        shape: RoundedRectangleBorder(
+          side: const BorderSide(color: Color(0xFFBBBBBB)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => controladorAdmin.devolverProducto(context, producto),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: _detalleProducto(producto),
+          ),
+        ),
+      );
+    }
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -508,7 +502,10 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     return _accion(
       'Ver',
       'IconoOjo_ListarProductos.png',
-      () => controladorAdmin.verProducto(context, producto),
+      () async {
+        await controladorAdmin.verProducto(context, producto);
+        if (mounted) await _cargarProductos();
+      },
     );
   }
 
@@ -517,7 +514,10 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     return _accion(
       'Editar',
       'IconoLapis_ListarProductos.png',
-      () => controladorAdmin.editarProducto(context, producto),
+      () async {
+        final ProductoListado? editado = await controladorAdmin.editarProducto(context, producto);
+        if (mounted && editado != null) await _cargarProductos();
+      },
     );
   }
 

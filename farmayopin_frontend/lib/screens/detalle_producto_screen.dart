@@ -1,8 +1,9 @@
+import '../widgets/encabezado_cliente.dart';
+import '../widgets/presentacion_cliente.dart';
 import 'package:flutter/material.dart';
 
 import '../controladores/controlador_admin.dart';
 import '../controladores/controlador_cliente.dart';
-import '../widgets/productos_cliente_widgets.dart';
 import '../dtos/producto_listado.dart';
 import '../config/api_config.dart';
 
@@ -12,10 +13,12 @@ class DetalleProductoScreen extends StatefulWidget {
     super.key,
     required this.producto,
     this.esCliente = false,
+    this.controladorAdmin = const ControladorAdmin(),
     this.controladorCliente = const ControladorCliente(),
   });
 
   final ProductoListado producto;
+  final ControladorAdmin controladorAdmin;
   final bool esCliente;
   final ControladorCliente controladorCliente;
 
@@ -36,7 +39,7 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
     producto = widget.producto;
   }
 
-  final ControladorAdmin controlador = const ControladorAdmin();
+  ControladorAdmin get controlador => widget.controladorAdmin;
 
   static const Color _turquesa = Color(0xFF50BDB5);
   static const Color _textoSecundario = Color(0xFF929299);
@@ -583,7 +586,12 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
       builder: (context, constraints) {
         final bool compacto = constraints.maxWidth < 340;
         final Widget editar = FilledButton.icon(
-          onPressed: () => controlador.editarProducto(context, producto),
+          onPressed: () async {
+            final ProductoListado? editado = await controlador.editarProducto(context, producto);
+            if (mounted && editado != null) {
+              setState(() { producto = editado; });
+            }
+          },
           icon: const Icon(Icons.edit_outlined),
           label: const Text('Editar producto'),
           style: FilledButton.styleFrom(

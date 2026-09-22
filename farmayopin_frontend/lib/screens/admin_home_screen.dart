@@ -5,9 +5,9 @@ import '../controladores/controlador_admin.dart';
 // Esta pantalla no tiene datos que cambien: por eso usa StatelessWidget.
 // Para leerla, empezá por build y seguí los métodos de cada sección.
 class AdminHomeScreen extends StatelessWidget {
-  const AdminHomeScreen({super.key});
+  const AdminHomeScreen({super.key, this.controlador = const ControladorAdmin()});
 
-  final controlador = const ControladorAdmin();
+  final ControladorAdmin controlador;
 
   // Equivalen a variables de CSS: los estilos compartidos se definen una vez.
   static const _bannerColor = Color(0xFF50BDB5);
@@ -32,8 +32,7 @@ class AdminHomeScreen extends StatelessWidget {
                   _buildWelcomeCard(),
                   const SizedBox(height: 28),
                   _buildProductMenu(context),
-                  const SizedBox(height: 28),
-                  _buildPurchaseHistoryCard(context),
+
                   const SizedBox(height: 24),
                 ],
               ),
@@ -218,19 +217,17 @@ class AdminHomeScreen extends StatelessWidget {
             ),
             _buildProductCard(
               width: cardWidth,
-              title: 'Ver producto',
-              description: 'Ver información detallada del producto.',
-              iconFile: 'IconoVerProducto.png',
-              onTap: () =>
-                  controlador.mostrarPendiente(context, 'Ver producto'),
-            ),
-            _buildProductCard(
-              width: cardWidth,
               title: 'Editar producto',
               description: 'Modificar la información de productos existentes.',
               iconFile: 'IconoEditarProducto.png',
-              onTap: () =>
-                  controlador.mostrarPendiente(context, 'Editar producto'),
+              onTap: () => controlador.abrirEditarProducto(context),
+            ),
+            _buildProductCard(
+              width: cardWidth,
+              title: 'Histórico de Compras',
+              description: 'Ver historial de compras de un producto (Fecha, Cantidad, Cliente).',
+              iconFile: 'IconoHistoricoDeCompra1Prod.png',
+              onTap: () => controlador.abrirHistoricoProducto(context),
             ),
           ],
         );
@@ -268,40 +265,6 @@ class AdminHomeScreen extends StatelessWidget {
             Align(alignment: Alignment.centerRight, child: _buildArrow()),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildPurchaseHistoryCard(BuildContext context) {
-    return _buildMenuCard(
-      onTap: () =>
-          controlador.mostrarPendiente(context, 'Histórico de compras'),
-      child: Row(
-        children: [
-          Image.asset(
-            '$_iconsPath/IconoHistoricoDeCompra1Prod.png',
-            width: 66,
-            height: 66,
-          ),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Histórico de Compras',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'Ver historial de compras realizadas\n(Fecha, Cantidad, Cliente).',
-                  style: TextStyle(fontSize: 12, color: _secondaryText),
-                ),
-              ],
-            ),
-          ),
-          _buildArrow(),
-        ],
       ),
     );
   }
