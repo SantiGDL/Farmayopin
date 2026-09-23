@@ -14,6 +14,8 @@ import '../dtos/detalle_compra.dart';
 import '../dtos/producto_listado.dart';
 import '../servicios/servicio_cliente.dart';
 
+// ================== ESTRUCTURA Y LÓGICA ==================
+
 class DetalleCompraScreen extends StatefulWidget {
   const DetalleCompraScreen({
     super.key,
@@ -83,42 +85,35 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  EncabezadoCliente(
-                    cerrarSesion: () =>
-                        widget.controlador.cerrarSesion(context),
-                  ),
-                  VolverCliente(
-                    volver: () => widget.controlador.volver(context),
-                  ),
-                  const PresentacionCliente(
-                    titulo: 'Detalle Compra',
-                    descripcion: 'Revisá el detalle de la compra realizada en la fecha seleccionada.',
-                  ),
-                  const SizedBox(height: 22),
-                  _contenido(),
-                ],
-              ),
-            ),
-          ),
-        ),
+        child: _crearContenidoCentrado(context),
       ),
     );
   }
 
-  Widget _contenido() {
+  Widget _crearEstructuraPantalla(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        EncabezadoCliente(
+          cerrarSesion: () =>
+              widget.controlador.cerrarSesion(context),
+        ),
+        VolverCliente(
+          volver: () => widget.controlador.volver(context),
+        ),
+        const PresentacionCliente(
+          titulo: 'Detalle Compra',
+          descripcion: 'Revisá el detalle de la compra realizada en la fecha seleccionada.',
+        ),
+        const SizedBox(height: 22),
+        _crearContenidoCompra(),
+      ],
+    );
+  }
+
+  Widget _crearContenidoCompra() {
     if (cargando) {
-      return const Padding(
-        padding: EdgeInsets.all(32),
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
     }
     if (errorCarga != null) {
       return ErrorConsultaCompra(
@@ -160,28 +155,36 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
         const SizedBox(height: 14),
         FechaCompraCliente(fecha: actual.fechaCompra),
         const SizedBox(height: 6),
-        Text(
-          '${widget.controlador.identificadorPedido(actual.id)} · Pagada',
-          style: const TextStyle(fontSize: 11, color: Color(0xFF168E88)),
-        ),
+        Text('${widget.controlador.identificadorPedido(actual.id)} · Pagada',
+            style: const TextStyle(fontSize: 11, color: Color(0xFF168E88))),
         const SizedBox(height: 18),
         if (visibles.isEmpty)
           Padding(
             padding: const EdgeInsets.all(20),
-            child: Text(
-              actual.lineas.isEmpty
-                  ? 'Esta compra no tiene productos.'
-                  : 'No se encontraron productos.',
-              textAlign: TextAlign.center,
-            ),
+            child: Text(actual.lineas.isEmpty ? 'Esta compra no tiene productos.' : 'No se encontraron productos.',
+                textAlign: TextAlign.center),
           ),
-        for (final LineaCompra linea in visibles) _producto(linea),
-        _resumen(actual),
+        for (final LineaCompra linea in visibles) _crearTarjetaProducto(linea),
+        _crearResumenImportes(actual),
       ],
     );
   }
 
-  Widget _producto(LineaCompra linea) {
+  // ================== DISEÑO Y PRESENTACIÓN ==================
+
+  Widget _crearContenidoCentrado(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: _crearEstructuraPantalla(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _crearTarjetaProducto(LineaCompra linea) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(6),
@@ -199,50 +202,26 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  linea.producto.nombre,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  linea.producto.descripcion,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11),
-                ),
+                Text(linea.producto.nombre, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                Text(linea.producto.descripcion,
+                    maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 16,
                   runSpacing: 6,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text(
-                      formatearImporte(linea.producto.precio),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF239F98),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text(formatearImporte(linea.producto.precio),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF239F98), fontWeight: FontWeight.bold)),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 3,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEAFBF7),
                         border: Border.all(color: const Color(0xFFBBBBBB)),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Text(
-                        'Cantidad: ${linea.cantidad}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF168E88),
-                        ),
-                      ),
+                      child: Text('Cantidad: ${linea.cantidad}',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF168E88))),
                     ),
                   ],
                 ),
@@ -254,47 +233,36 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
     );
   }
 
-  Widget _resumen(DetalleCompra actual) {
+  Widget _crearResumenImportes(DetalleCompra actual) {
     // Los filtros solo cambian las filas visibles; los totales son de la compra completa.
     return Container(
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFBBBBBB)),
-        borderRadius: BorderRadius.circular(9),
-      ),
+      decoration: BoxDecoration(border: Border.all(color: const Color(0xFFBBBBBB)), borderRadius: BorderRadius.circular(9)),
       child: Column(
         children: [
-          _importe(
+          _crearFilaImporte(
             'Subtotal (${actual.cantidadProductos} productos)',
             actual.subtotal,
             false,
           ),
           const SizedBox(height: 6),
-          _importe('Envío', actual.envio, false),
+          _crearFilaImporte('Envío', actual.envio, false),
           const Divider(),
-          _importe('Total', actual.total, true),
+          _crearFilaImporte('Total', actual.total, true),
         ],
       ),
     );
   }
 
-  Widget _importe(String etiqueta, double valor, bool destacar) {
+  Widget _crearFilaImporte(String etiqueta, double valor, bool destacar) {
     return Row(
       children: [
         Expanded(
-          child: Text(
-            etiqueta,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: destacar ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
+          child: Text(etiqueta,
+              style: TextStyle(fontSize: 11, fontWeight: destacar ? FontWeight.bold : FontWeight.normal)),
         ),
         const SizedBox(width: 12),
-        Text(
-          formatearImporte(valor),
-          style: const TextStyle(fontSize: 11, color: Color(0xFF168E88)),
-        ),
+        Text(formatearImporte(valor), style: const TextStyle(fontSize: 11, color: Color(0xFF168E88))),
       ],
     );
   }

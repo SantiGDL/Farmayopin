@@ -11,7 +11,8 @@ import '../dtos/producto_listado.dart';
 import '../config/api_config.dart';
 import '../controladores/controlador_cliente.dart';
 
-//ListarProductosScreen define el widget y recibe su configuración.
+// ================== ESTRUCTURA Y LÓGICA ==================
+
 class ListarProductosScreen extends StatefulWidget {
   const ListarProductosScreen({
     super.key,
@@ -34,9 +35,7 @@ class ListarProductosScreen extends StatefulWidget {
   }
 }
 
-//_ListarProductosScreenState guarda los datos cambiantes y su build() construye toda la interfaz, incluyendo títulos, botones y productos.
 class _ListarProductosScreenState extends State<ListarProductosScreen> {
-  //Variables
   ControladorAdmin get controladorAdmin => widget.controladorAdmin;
   List<ProductoListado> productos = [];
   bool cargando = true;
@@ -104,181 +103,113 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     }
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _encabezado(),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        if (widget.esCliente) {
-                          widget.controladorCliente.volver(context);
-                        } else {
-                          controladorAdmin.volverAlMenu(context);
-                        }
-                      },
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Volver'),
-                    ),
-                  ),
-                  if (widget.esCliente) ...[
-                    const SizedBox(height: 18),
-                    const PresentacionCliente(
-                      titulo: 'Explora los\nProductos',
-                      descripcion: 'Navegá nuestro catálogo de medicamentos, vitaminas y productos de cuidado personal con total confianza.',
-                    ),
-                  ] else
-                    _presentacion(),
-                  const SizedBox(height: 22),
-                  _buscador(),
-                  const SizedBox(height: 12),
-                  FiltrosProductos(
-                    productos: productos,
-                    categoria: categoria,
-                    alSeleccionar: (String seleccionada) {
-                      setState(() {
-                        categoria = seleccionada;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  if (cargando)
-                    const Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (errorCarga != null)
-                    Column(
-                      children: [
-                        Text(errorCarga!, textAlign: TextAlign.center),
-                        TextButton(
-                          onPressed: _cargarProductos,
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                    )
-                  else if (visibles.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text(
-                        'No se encontraron productos.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  if (!cargando && errorCarga == null)
-                    for (final ProductoListado producto in visibles)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 18),
-                        child: widget.esCliente
-                            ? _filaCliente(producto)
-                            : _filaProducto(producto),
-                      ),
-                  if (widget.esCliente) ...[
-                    const SizedBox(height: 32),
-                    Center(
-                      child: FilledButton.icon(
-                        onPressed: agregando
-                            ? null
-                            : () async {
-                                await widget.controladorCliente.verCarrito(
-                                  context,
-                                );
-                                if (mounted) await _cargarProductos();
-                              },
-                        icon: const Icon(
-                          Icons.shopping_cart_outlined,
-                          size: 20,
-                        ),
-                        label: const Text('Ver carrito'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF008F8A),
-                          minimumSize: const Size(130, 36),
-                          textStyle: const TextStyle(fontSize: 12),
-                          shape: const StadiumBorder(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+        child: _crearContenidoCentrado(context, visibles),
+      ),
+    );
+  }
+
+  Widget _crearEstructuraPantalla(BuildContext context, List<ProductoListado> visibles) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _crearEncabezado(),
+        _crearBotonVolver(context),
+        if (widget.esCliente) ...[
+          const SizedBox(height: 18),
+          const PresentacionCliente(
+            titulo: 'Explora los\nProductos',
+            descripcion: 'Navegá nuestro catálogo de medicamentos, vitaminas y productos de cuidado personal con total confianza.',
           ),
+        ] else
+          _crearPresentacion(),
+        const SizedBox(height: 22),
+        _crearBuscador(),
+        const SizedBox(height: 12),
+        FiltrosProductos(
+          productos: productos,
+          categoria: categoria,
+          alSeleccionar: (String seleccionada) {
+            setState(() {
+              categoria = seleccionada;
+            });
+          },
+        ),
+        const SizedBox(height: 12),
+        if (cargando)
+          const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))
+        else if (errorCarga != null)
+          Column(
+            children: [
+              Text(errorCarga!, textAlign: TextAlign.center),
+              TextButton(
+                onPressed: _cargarProductos,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          )
+        else if (visibles.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('No se encontraron productos.', textAlign: TextAlign.center),
+          ),
+        if (!cargando && errorCarga == null)
+          for (final ProductoListado producto in visibles)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 18),
+              child: widget.esCliente
+                  ? _crearTarjetaCliente(producto)
+                  : _crearTarjetaProducto(producto),
+            ),
+        if (widget.esCliente) ...[
+          const SizedBox(height: 32),
+          _crearBotonCarrito(context),
+        ],
+      ],
+    );
+  }
+
+  Widget _crearBotonCarrito(BuildContext context) {
+    return Center(
+      child: FilledButton.icon(
+        onPressed: agregando
+            ? null
+            : () async {
+                await widget.controladorCliente.verCarrito(
+                  context,
+                );
+                if (mounted) await _cargarProductos();
+              },
+        icon: const Icon(Icons.shopping_cart_outlined, size: 20),
+        label: const Text('Ver carrito'),
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF008F8A),
+          minimumSize: const Size(130, 36),
+          textStyle: const TextStyle(fontSize: 12),
+          shape: const StadiumBorder(),
         ),
       ),
     );
   }
 
-  // Muestra el logo, el rol de administrador y el botón para cerrar sesión.
-  Widget _encabezado() {
-    if (widget.esCliente) {
-      return EncabezadoCliente(
-        cerrarSesion: () {
-          widget.controladorCliente.cerrarSesion(context);
+  Widget _crearBotonVolver(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        onPressed: () {
+          if (widget.esCliente) {
+            widget.controladorCliente.volver(context);
+          } else {
+            controladorAdmin.volverAlMenu(context);
+          }
         },
-      );
-    }
-    return EncabezadoAdmin(cerrarSesion: () => controladorAdmin.cerrarSesion(context));
-  }
-
-  // Muestra el título del listado, su descripción y la ilustración del administrador.
-  Widget _presentacion() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 7),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: turquesa,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.seleccionarParaHistorial
-                ? 'Selección de Producto Historial'
-                : 'Listado de productos',
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 12),
-                  child: Text(
-                    'Consulta y gestiona todos los productos registrados en el sistema.',
-                    style: TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Image.asset(
-                  '$iconos/IconoAdmin.png',
-                  height: 145,
-                  fit: BoxFit.contain,
-                  excludeFromSemantics: true,
-                ),
-              ),
-            ],
-          ),
-        ],
+        icon: const Icon(Icons.arrow_back),
+        label: const Text('Volver'),
       ),
     );
   }
 
   // Construye el campo de búsqueda y actualiza el texto usado para filtrar los productos.
-  Widget _buscador() {
+  Widget _crearBuscador() {
     if (widget.esCliente) {
       return BuscadorProductos(
         alCambiar: (String texto) {
@@ -307,7 +238,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     );
   }
 
-  Widget _filaCliente(ProductoListado producto) {
+  Widget _crearTarjetaCliente(ProductoListado producto) {
     return TarjetaProductoCliente(
       producto: producto,
       acciones: Column(
@@ -369,7 +300,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   }
 
   // Organiza los datos y las acciones del producto según el espacio disponible.
-  Widget _filaProducto(ProductoListado producto) {
+  Widget _crearTarjetaProducto(ProductoListado producto) {
     if (widget.seleccionarParaHistorial || widget.seleccionarParaEdicion) {
       return Material(
         color: const Color(0xFFFFFDFD),
@@ -380,10 +311,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () => controladorAdmin.devolverProducto(context, producto),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: _detalleProducto(producto),
-          ),
+          child: Padding(padding: const EdgeInsets.all(8), child: _crearDatosProducto(producto)),
         ),
       );
     }
@@ -399,7 +327,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
           final bool compacto =
               constraints.maxWidth < 330 ||
               MediaQuery.textScalerOf(context).scale(14) > 18;
-          final Widget detalle = _detalleProducto(producto);
+          final Widget detalle = _crearDatosProducto(producto);
           // Con poco ancho, las acciones bajan de fila para no cortar textos.
           if (compacto) {
             return Column(
@@ -409,7 +337,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 12,
-                  children: [_ver(producto), _editar(producto)],
+                  children: [_crearBotonVer(producto), _crearBotonEditar(producto)],
                 ),
               ],
             );
@@ -418,7 +346,7 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
             children: [
               Expanded(child: detalle),
               const SizedBox(width: 8),
-              Column(children: [_ver(producto), _editar(producto)]),
+              Column(children: [_crearBotonVer(producto), _crearBotonEditar(producto)]),
             ],
           );
         },
@@ -426,8 +354,114 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
     );
   }
 
+  // Construye el botón que solicita al controlador abrir el detalle del producto.
+  Widget _crearBotonVer(ProductoListado producto) {
+    return _crearBotonAccion(
+      'Ver',
+      'IconoOjo_ListarProductos.png',
+      () async {
+        await controladorAdmin.verProducto(context, producto);
+        if (mounted) await _cargarProductos();
+      },
+    );
+  }
+
+  // Construye el botón que llama a la acción de editar del controlador.
+  Widget _crearBotonEditar(ProductoListado producto) {
+    return _crearBotonAccion(
+      'Editar',
+      'IconoLapis_ListarProductos.png',
+      () async {
+        final ProductoListado? editado = await controladorAdmin.editarProducto(context, producto);
+        if (mounted && editado != null) await _cargarProductos();
+      },
+    );
+  }
+
+  // Construye un botón reutilizable con texto, un ícono y la acción que ejecutará al pulsarlo.
+  Widget _crearBotonAccion(String titulo, String archivo, VoidCallback accion) {
+    return TextButton.icon(
+      onPressed: accion,
+      icon: Image.asset(
+        '$iconos/$archivo',
+        width: 36,
+        height: 36,
+        excludeFromSemantics: true,
+      ),
+      label: Text(titulo, style: const TextStyle(fontSize: 12)),
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.black,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+      ),
+    );
+  }
+
+  // ================== DISEÑO Y PRESENTACIÓN ==================
+
+  Widget _crearContenidoCentrado(BuildContext context, List<ProductoListado> visibles) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: _crearEstructuraPantalla(context, visibles),
+        ),
+      ),
+    );
+  }
+
+  // Muestra el logo, el rol de administrador y el botón para cerrar sesión.
+  Widget _crearEncabezado() {
+    if (widget.esCliente) {
+      return EncabezadoCliente(
+        cerrarSesion: () {
+          widget.controladorCliente.cerrarSesion(context);
+        },
+      );
+    }
+    return EncabezadoAdmin(cerrarSesion: () => controladorAdmin.cerrarSesion(context));
+  }
+
+  // Muestra el título del listado, su descripción y la ilustración del administrador.
+  Widget _crearPresentacion() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 7),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: turquesa, borderRadius: BorderRadius.circular(22)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(widget.seleccionarParaHistorial ? 'Selección de Producto Historial' : 'Listado de productos',
+              style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 12),
+                  child: Text('Consulta y gestiona todos los productos registrados en el sistema.',
+                      style: TextStyle(color: Colors.white, fontSize: 12)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Image.asset(
+                  '$iconos/IconoAdmin.png',
+                  height: 145,
+                  fit: BoxFit.contain,
+                  excludeFromSemantics: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   // Obtiene la imagen del backend usando la ruta base y la FotoUrl del producto.
-  Widget _imagenProducto(ProductoListado producto) {
+  Widget _crearImagenProducto(ProductoListado producto) {
     final String ruta = producto.fotoUrl?.trim() ?? '';
     final Widget imagenRespaldo = Image.asset(
       'assets/images/producto_default.png',
@@ -454,88 +488,32 @@ class _ListarProductosScreenState extends State<ListarProductosScreen> {
   }
 
   // Muestra la imagen, el nombre, la descripción, el precio y el stock del producto.
-  Widget _detalleProducto(ProductoListado producto) {
+  Widget _crearDatosProducto(ProductoListado producto) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _imagenProducto(producto),
+        _crearImagenProducto(producto),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                producto.nombre,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text(producto.nombre, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               Text(producto.descripcion, style: const TextStyle(fontSize: 13)),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 20,
                 runSpacing: 4,
                 children: [
-                  Text(
-                    '\$${producto.precio}',
-                    style: const TextStyle(
-                      color: turquesa,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'Stock: ${producto.stock}',
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                  Text('\$${producto.precio}',
+                      style: const TextStyle(color: turquesa, fontWeight: FontWeight.bold)),
+                  Text('Stock: ${producto.stock}', style: const TextStyle(fontSize: 13)),
                 ],
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  // Construye el botón que solicita al controlador abrir el detalle del producto.
-  Widget _ver(ProductoListado producto) {
-    return _accion(
-      'Ver',
-      'IconoOjo_ListarProductos.png',
-      () async {
-        await controladorAdmin.verProducto(context, producto);
-        if (mounted) await _cargarProductos();
-      },
-    );
-  }
-
-  // Construye el botón que llama a la acción de editar del controlador.
-  Widget _editar(ProductoListado producto) {
-    return _accion(
-      'Editar',
-      'IconoLapis_ListarProductos.png',
-      () async {
-        final ProductoListado? editado = await controladorAdmin.editarProducto(context, producto);
-        if (mounted && editado != null) await _cargarProductos();
-      },
-    );
-  }
-
-  // Construye un botón reutilizable con texto, un ícono y la acción que ejecutará al pulsarlo.
-  Widget _accion(String titulo, String archivo, VoidCallback accion) {
-    return TextButton.icon(
-      onPressed: accion,
-      icon: Image.asset(
-        '$iconos/$archivo',
-        width: 36,
-        height: 36,
-        excludeFromSemantics: true,
-      ),
-      label: Text(titulo, style: const TextStyle(fontSize: 12)),
-      style: TextButton.styleFrom(
-        foregroundColor: Colors.black,
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-      ),
     );
   }
 }

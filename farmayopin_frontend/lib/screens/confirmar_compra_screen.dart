@@ -10,6 +10,8 @@ import '../controladores/controlador_cliente.dart';
 import '../dtos/carrito_cliente.dart';
 import '../servicios/servicio_cliente.dart';
 
+// ================== ESTRUCTURA Y LÓGICA ==================
+
 class ConfirmarCompraScreen extends StatefulWidget {
   const ConfirmarCompraScreen({
     super.key,
@@ -99,57 +101,50 @@ class _ConfirmarCompraScreenState extends State<ConfirmarCompraScreen> {
       canPop: !confirmando,
       child: Scaffold(
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    EncabezadoCliente(
-                      cerrarSesion: confirmando
-                          ? null
-                          : () => widget.controlador.cerrarSesion(context),
-                    ),
-                    VolverCliente(
-                      volver: confirmando
-                          ? null
-                          : () => widget.controlador.volver(context),
-                    ),
-                    const PresentacionCliente(
-                      titulo: 'Confirmar compra',
-                      descripcion: 'Revisá tu pedido, elegí tu método de pago y confirmá para completar tu compra de forma segura.',
-                    ),
-                    const SizedBox(height: 14),
-                    _contenido(),
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: confirmando
-                          ? null
-                          : () => widget.controlador.volver(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF199F98),
-                        side: const BorderSide(color: Color(0xFF199F98)),
-                      ),
-                      child: const Text('Volver al carrito'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          child: _crearContenidoCentrado(context),
         ),
       ),
     );
   }
 
-  Widget _contenido() {
+  Widget _crearEstructuraPantalla(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        EncabezadoCliente(
+          cerrarSesion: confirmando
+              ? null
+              : () => widget.controlador.cerrarSesion(context),
+        ),
+        VolverCliente(
+          volver: confirmando
+              ? null
+              : () => widget.controlador.volver(context),
+        ),
+        const PresentacionCliente(
+          titulo: 'Confirmar compra',
+          descripcion: 'Revisá tu pedido, elegí tu método de pago y confirmá para completar tu compra de forma segura.',
+        ),
+        const SizedBox(height: 14),
+        _crearContenidoCompra(),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: confirmando
+              ? null
+              : () => widget.controlador.volver(context),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF199F98),
+            side: const BorderSide(color: Color(0xFF199F98)),
+          ),
+          child: const Text('Volver al carrito'),
+        ),
+      ],
+    );
+  }
+
+  Widget _crearContenidoCompra() {
     if (cargando) {
-      return const Padding(
-        padding: EdgeInsets.all(32),
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
     }
     if (errorCarga != null) {
       return Column(
@@ -174,9 +169,9 @@ class _ConfirmarCompraScreenState extends State<ConfirmarCompraScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _resumenProductos(actual),
+        _crearResumenProductos(actual),
         const SizedBox(height: 12),
-        _metodosPago(),
+        _crearMetodosPago(),
         const SizedBox(height: 12),
         ResumenCarritoCliente(carrito: actual, esConfirmacion: true),
         const SizedBox(height: 14),
@@ -194,97 +189,22 @@ class _ConfirmarCompraScreenState extends State<ConfirmarCompraScreen> {
     );
   }
 
-  Widget _resumenProductos(CarritoCliente actual) {
-    return _seccion(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Resumen de Compra',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
-          const SizedBox(height: 10),
-          const Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Nombre',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
-              SizedBox(
-                width: 54,
-                child: Text(
-                  'Cantidad',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
-              SizedBox(
-                width: 62,
-                child: Text(
-                  'Precio',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          for (final LineaCarritoCliente linea in actual.lineas)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 7),
-              child: Row(
-                children: [
-                  ImagenProducto(producto: linea.producto, tamano: 32),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      linea.producto.nombre,
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 54,
-                    child: Text(
-                      'x${linea.cantidad}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 62,
-                    child: Text(
-                      formatearImporte(linea.subtotal),
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _metodosPago() {
+  Widget _crearMetodosPago() {
     // El dominio no tiene un atributo para el método: selección visual única.
-    return _seccion(
+    return _crearSeccion(
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Método de pago',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
+          const Text('Método de pago', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             alignment: WrapAlignment.spaceBetween,
             children: [
-              _metodo('Tarjeta', Icons.credit_card),
-              _metodo('Transferencia', Icons.account_balance_outlined),
-              _metodo('Efectivo', Icons.payments_outlined),
+              _crearOpcionPago('Tarjeta', Icons.credit_card),
+              _crearOpcionPago('Transferencia', Icons.account_balance_outlined),
+              _crearOpcionPago('Efectivo', Icons.payments_outlined),
             ],
           ),
         ],
@@ -292,7 +212,7 @@ class _ConfirmarCompraScreenState extends State<ConfirmarCompraScreen> {
     );
   }
 
-  Widget _metodo(String nombre, IconData icono) {
+  Widget _crearOpcionPago(String nombre, IconData icono) {
     final bool seleccionado = metodo == nombre;
     return Semantics(
       checked: seleccionado,
@@ -335,13 +255,75 @@ class _ConfirmarCompraScreenState extends State<ConfirmarCompraScreen> {
     );
   }
 
-  Widget _seccion(Widget contenido) {
+  // ================== DISEÑO Y PRESENTACIÓN ==================
+
+  Widget _crearContenidoCentrado(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: _crearEstructuraPantalla(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _crearResumenProductos(CarritoCliente actual) {
+    return _crearSeccion(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('Resumen de Compra', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          const SizedBox(height: 10),
+          const Row(
+            children: [
+              Expanded(
+                child: Text('Nombre', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+              SizedBox(
+                width: 54,
+                child: Text('Cantidad', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+              SizedBox(
+                width: 62,
+                child: Text('Precio',
+                    textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          for (final LineaCarritoCliente linea in actual.lineas)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              child: Row(
+                children: [
+                  ImagenProducto(producto: linea.producto, tamano: 32),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(linea.producto.nombre, style: const TextStyle(fontSize: 11)),
+                  ),
+                  SizedBox(
+                    width: 54,
+                    child: Text('x${linea.cantidad}',
+                        textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
+                  ),
+                  SizedBox(
+                    width: 62,
+                    child: Text(formatearImporte(linea.subtotal),
+                        textAlign: TextAlign.right, style: const TextStyle(fontSize: 11)),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _crearSeccion(Widget contenido) {
     return Container(
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFBBBBBB)),
-        borderRadius: BorderRadius.circular(9),
-      ),
+      decoration: BoxDecoration(border: Border.all(color: const Color(0xFFBBBBBB)), borderRadius: BorderRadius.circular(9)),
       child: contenido,
     );
   }

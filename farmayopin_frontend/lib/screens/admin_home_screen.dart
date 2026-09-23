@@ -4,6 +4,8 @@ import '../controladores/controlador_admin.dart';
 
 // Esta pantalla no tiene datos que cambien: por eso usa StatelessWidget.
 // Para leerla, empezá por build y seguí los métodos de cada sección.
+// ================== ESTRUCTURA Y LÓGICA ==================
+
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key, this.controlador = const ControladorAdmin()});
 
@@ -18,32 +20,90 @@ class AdminHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-          child: Center(
-            // Como max-width en CSS: evita estirar las tarjetas en escritorio.
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildHeader(context),
-                  const SizedBox(height: 24),
-                  _buildWelcomeCard(),
-                  const SizedBox(height: 28),
-                  _buildProductMenu(context),
+        child: _crearContenidoCentrado(context),
+      ),
+    );
+  }
 
-                  const SizedBox(height: 24),
-                ],
-              ),
+  Widget _crearEstructuraPantalla(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _crearEncabezado(context),
+        const SizedBox(height: 24),
+        _crearTarjetaBienvenida(),
+        const SizedBox(height: 28),
+        _crearMenuProductos(context),
+
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _crearMenuProductos(BuildContext context) {
+    // LayoutBuilder obtiene el ancho real disponible, como un contenedor CSS.
+    // Wrap arma dos columnas, o una en pantallas muy angostas.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = constraints.maxWidth < 340
+            ? constraints.maxWidth
+            : (constraints.maxWidth - 12) / 2;
+
+        return Wrap(
+          spacing: 12,
+          runSpacing: 36,
+          children: [
+            _crearTarjetaOpcion(
+              width: cardWidth,
+              title: 'Listar productos',
+              description: 'Ver todos los productos registrados en el sistema.',
+              iconFile: 'IconoListarProductos.png',
+              onTap: () =>
+                  controlador.abrirListadoProductos(context),
             ),
-          ),
+            _crearTarjetaOpcion(
+              width: cardWidth,
+              title: 'Crear producto',
+              description: 'Agregar nuevos productos al inventario.',
+              iconFile: 'IconoCrearProducto.png',
+              onTap: () => controlador.abrirCrearProducto(context),
+            ),
+            _crearTarjetaOpcion(
+              width: cardWidth,
+              title: 'Editar producto',
+              description: 'Modificar la información de productos existentes.',
+              iconFile: 'IconoEditarProducto.png',
+              onTap: () => controlador.abrirEditarProducto(context),
+            ),
+            _crearTarjetaOpcion(
+              width: cardWidth,
+              title: 'Histórico de Compras',
+              description: 'Ver historial de compras de un producto (Fecha, Cantidad, Cliente).',
+              iconFile: 'IconoHistoricoDeCompra1Prod.png',
+              onTap: () => controlador.abrirHistoricoProducto(context),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ================== DISEÑO Y PRESENTACIÓN ==================
+
+  Widget _crearContenidoCentrado(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+      child: Center(
+        // Como max-width en CSS: evita estirar las tarjetas en escritorio.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: _crearEstructuraPantalla(context),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _crearEncabezado(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       // Wrap permite que el botón pase abajo si no queda espacio horizontal.
@@ -61,14 +121,8 @@ class AdminHomeScreen extends StatelessWidget {
                 width: 100,
                 semanticLabel: 'Farmayopin',
               ),
-              const Text(
-                'Administrador',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              const Text('Administrador',
+                  style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           TextButton.icon(
@@ -78,13 +132,8 @@ class AdminHomeScreen extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: Colors.black,
               backgroundColor: const Color(0xFFEEEEEE),
-              textStyle: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],
@@ -92,13 +141,10 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWelcomeCard() {
+  Widget _crearTarjetaBienvenida() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: _bannerColor,
-        borderRadius: BorderRadius.circular(22),
-      ),
+      decoration: BoxDecoration(color: _bannerColor, borderRadius: BorderRadius.circular(22)),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final double escalaTexto =
@@ -114,10 +160,10 @@ class AdminHomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _welcomeText(double.infinity, double.infinity),
+                  _crearTextoBienvenida(double.infinity, double.infinity),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: _bottleImage(),
+                    child: _crearIlustracionFrasco(),
                   ),
                 ],
               ),
@@ -132,10 +178,10 @@ class AdminHomeScreen extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: 213),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
-                  child: _welcomeText(235, constraints.maxWidth - 195),
+                  child: _crearTextoBienvenida(235, constraints.maxWidth - 195),
                 ),
               ),
-              Positioned(right: 12, bottom: 8, child: _bottleImage()),
+              Positioned(right: 12, bottom: 8, child: _crearIlustracionFrasco()),
             ],
           );
         },
@@ -143,40 +189,28 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _welcomeText(double anchoTitulo, double anchoDescripcion) {
+  Widget _crearTextoBienvenida(double anchoTitulo, double anchoDescripcion) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'PANEL ADMINISTRADOR',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        const Text('PANEL ADMINISTRADOR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         const SizedBox(height: 18),
         SizedBox(
           width: anchoTitulo,
-          child: const Text(
-            'Gestión de artículos de farmacia',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 21,
-              fontWeight: FontWeight.bold,
-              height: 1.15,
-            ),
-          ),
+          child: const Text('Gestión de artículos de farmacia',
+              style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold, height: 1.15)),
         ),
         const SizedBox(height: 20),
         SizedBox(
           width: anchoDescripcion,
-          child: const Text(
-            'Accedé rápidamente a las funciones administrativas del sistema',
-            style: TextStyle(color: Colors.white, fontSize: 12),
-          ),
+          child: const Text('Accedé rápidamente a las funciones administrativas del sistema',
+              style: TextStyle(color: Colors.white, fontSize: 12)),
         ),
       ],
     );
   }
 
-  Widget _bottleImage() {
+  Widget _crearIlustracionFrasco() {
     // Tamaño de la ilustración independiente del espacio que ocupa el texto.
     return Image.asset(
       '$_iconsPath/IconoAdmin.png',
@@ -187,55 +221,7 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProductMenu(BuildContext context) {
-    // LayoutBuilder obtiene el ancho real disponible, como un contenedor CSS.
-    // Wrap arma dos columnas, o una en pantallas muy angostas.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cardWidth = constraints.maxWidth < 340
-            ? constraints.maxWidth
-            : (constraints.maxWidth - 12) / 2;
-
-        return Wrap(
-          spacing: 12,
-          runSpacing: 36,
-          children: [
-            _buildProductCard(
-              width: cardWidth,
-              title: 'Listar productos',
-              description: 'Ver todos los productos registrados en el sistema.',
-              iconFile: 'IconoListarProductos.png',
-              onTap: () =>
-                  controlador.abrirListadoProductos(context),
-            ),
-            _buildProductCard(
-              width: cardWidth,
-              title: 'Crear producto',
-              description: 'Agregar nuevos productos al inventario.',
-              iconFile: 'IconoCrearProducto.png',
-              onTap: () => controlador.abrirCrearProducto(context),
-            ),
-            _buildProductCard(
-              width: cardWidth,
-              title: 'Editar producto',
-              description: 'Modificar la información de productos existentes.',
-              iconFile: 'IconoEditarProducto.png',
-              onTap: () => controlador.abrirEditarProducto(context),
-            ),
-            _buildProductCard(
-              width: cardWidth,
-              title: 'Histórico de Compras',
-              description: 'Ver historial de compras de un producto (Fecha, Cantidad, Cliente).',
-              iconFile: 'IconoHistoricoDeCompra1Prod.png',
-              onTap: () => controlador.abrirHistoricoProducto(context),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildProductCard({
+  Widget _crearTarjetaOpcion({
     required double width,
     required String title,
     required String description,
@@ -246,30 +232,24 @@ class AdminHomeScreen extends StatelessWidget {
     // VoidCallback es una función sin parámetros ni retorno (como Action).
     return SizedBox(
       width: width,
-      child: _buildMenuCard(
+      child: _crearTarjetaMenu(
         onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Image.asset('$_iconsPath/$iconFile', width: 66, height: 66),
             const SizedBox(height: 6),
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 6),
-            Text(
-              description,
-              style: const TextStyle(color: _secondaryText, fontSize: 12),
-            ),
-            Align(alignment: Alignment.centerRight, child: _buildArrow()),
+            Text(description, style: const TextStyle(color: _secondaryText, fontSize: 12)),
+            Align(alignment: Alignment.centerRight, child: _crearFlecha()),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMenuCard({required Widget child, required VoidCallback onTap}) {
+  Widget _crearTarjetaMenu({required Widget child, required VoidCallback onTap}) {
     // Material define el borde y la sombra. InkWell hace clickeable la tarjeta
     // completa y muestra una respuesta visual al tocarla.
     final borderRadius = BorderRadius.circular(22);
@@ -292,7 +272,7 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildArrow() {
+  Widget _crearFlecha() {
     return const CircleAvatar(
       radius: 16,
       backgroundColor: Color(0xFFD9D9D9),

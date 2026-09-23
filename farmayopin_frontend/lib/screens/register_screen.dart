@@ -4,6 +4,8 @@ import '../controladores/controlador_general.dart';
 import '../widgets/wave_background.dart';
 
 // Esta vista dibuja widgets. Las acciones y validaciones están en el controlador.
+// ================== ESTRUCTURA Y LÓGICA ==================
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -31,17 +33,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           body: WaveBackground(
             showTopWave: false,
             child: SafeArea(
-              child: SingleChildScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.all(24),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 480),
-                    child: _buildRegistrationForm(),
-                  ),
-                ),
-              ),
+              child: _crearContenidoCentrado(),
             ),
           ),
         );
@@ -49,7 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildRegistrationForm() {
+  Widget _crearFormulario() {
     return Form(
       key: controlador.formKey,
       autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -57,29 +49,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildHeader(),
-          const _FieldLabel(
-            icon: Icons.person_outline,
-            text: 'Nombre completo:',
-          ),
-          _buildNameField(),
+          _crearEncabezado(),
+          const _FieldLabel(icon: Icons.person_outline, text: 'Nombre completo:'),
+          _crearCampoNombre(),
           const SizedBox(height: 20),
-          const _FieldLabel(
-            icon: Icons.alternate_email,
-            text: 'Correo electrónico:',
-          ),
-          _buildEmailField(),
+          const _FieldLabel(icon: Icons.alternate_email, text: 'Correo electrónico:'),
+          _crearCampoCorreo(),
           const SizedBox(height: 20),
           const _FieldLabel(icon: Icons.lock_outline, text: 'Contraseña:'),
-          _buildPasswordField(),
+          _crearCampoPassword(),
           const SizedBox(height: 20),
-          const _FieldLabel(
-            icon: Icons.lock_reset,
-            text: 'Confirmar contraseña:',
-          ),
-          _buildConfirmPasswordField(),
+          const _FieldLabel(icon: Icons.lock_reset, text: 'Confirmar contraseña:'),
+          _crearCampoConfirmacionPassword(),
           const SizedBox(height: 28),
-          _buildSubmitButton(),
+          _crearBotonRegistro(),
           const SizedBox(height: 18),
           TextButton(
             onPressed: () => controlador.volver(context),
@@ -90,28 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 12),
-        Image.asset(
-          'assets/images/farmayopin_logo.png',
-          width: 220,
-          semanticLabel: 'Farmayopin',
-        ),
-        const SizedBox(height: 18),
-        const Text(
-          'Crear cuenta',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 28),
-      ],
-    );
-  }
-
-  Widget _buildNameField() {
+  Widget _crearCampoNombre() {
     return TextFormField(
       controller: controlador.nombreController,
       textInputAction: TextInputAction.next,
@@ -120,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildEmailField() {
+  Widget _crearCampoCorreo() {
     return TextFormField(
       controller: controlador.correoController,
       keyboardType: TextInputType.emailAddress,
@@ -131,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _crearCampoPassword() {
     return TextFormField(
       controller: controlador.passwordController,
       obscureText: controlador.ocultarPassword,
@@ -142,18 +104,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         hintText: 'Ingresá tu contraseña',
         suffixIcon: IconButton(
           onPressed: controlador.alternarPassword,
-          icon: Icon(
-            controlador.ocultarPassword
-                ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined,
-          ),
+          icon: Icon(controlador.ocultarPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
         ),
       ),
       validator: controlador.validarPasswordRegistro,
     );
   }
 
-  Widget _buildConfirmPasswordField() {
+  Widget _crearCampoConfirmacionPassword() {
     return TextFormField(
       controller: controlador.confirmacionController,
       obscureText: controlador.ocultarConfirmacion,
@@ -176,7 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildSubmitButton() {
+  Widget _crearBotonRegistro() {
     return FilledButton(
       // Un callback null deshabilita el botón mientras se envía la solicitud.
       onPressed: controlador.enviando
@@ -186,15 +144,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ? const SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
             )
           : const Text('Registrarme'),
     );
   }
+
+  // ================== DISEÑO Y PRESENTACIÓN ==================
+
+  Widget _crearContenidoCentrado() {
+    return SingleChildScrollView(
+      keyboardDismissBehavior:
+          ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: _crearFormulario(),
+        ),
+      ),
+    );
+  }
+
+  Widget _crearEncabezado() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 12),
+        Image.asset(
+          'assets/images/farmayopin_logo.png',
+          width: 220,
+          semanticLabel: 'Farmayopin',
+        ),
+        const SizedBox(height: 18),
+        const Text('Crear cuenta',
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 28),
+      ],
+    );
+  }
 }
+// ================== COMPONENTES VISUALES ==================
 
 class _FieldLabel extends StatelessWidget {
   const _FieldLabel({required this.icon, required this.text});
@@ -211,10 +201,7 @@ class _FieldLabel extends StatelessWidget {
           Icon(icon, size: 24),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
