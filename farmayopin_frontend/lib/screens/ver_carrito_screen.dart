@@ -12,6 +12,8 @@ import '../dtos/carrito_cliente.dart';
 import '../dtos/producto_listado.dart';
 import '../servicios/servicio_cliente.dart';
 
+// ================== ESTRUCTURA Y LÓGICA ==================
+
 class VerCarritoScreen extends StatefulWidget {
   const VerCarritoScreen({
     super.key,
@@ -95,85 +97,81 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _cargarCarrito,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    EncabezadoCliente(
-                      cerrarSesion: () {
-                        widget.controlador.cerrarSesion(context);
-                      },
-                    ),
-                    VolverCliente(
-                      volver: guardando
-                          ? null
-                          : () => widget.controlador.volver(context),
-                    ),
-                    const PresentacionCliente(
-                      titulo: 'Mi Carrito',
-                      descripcion: 'Revisá los productos que agregaste a tu carrito y editá las cantidades o eliminalos si lo necesitás.',
-                    ),
-                    const SizedBox(height: 22),
-                    BuscadorProductos(
-                      alCambiar: (String texto) {
-                        setState(() {
-                          busqueda = texto;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    FiltrosProductos(
-                      productos: productos,
-                      categoria: categoria,
-                      alSeleccionar: (String seleccionada) {
-                        setState(() {
-                          categoria = seleccionada;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    if (guardando) const LinearProgressIndicator(),
-                    _contenido(),
-                    const SizedBox(height: 18),
-                    Center(
-                      child: OutlinedButton.icon(
-                        onPressed: guardando
-                            ? null
-                            : () {
-                                widget.controlador.seguirComprando(context);
-                              },
-                        icon: const Icon(Icons.arrow_back, color: Colors.black),
-                        label: const Text('Seguir comprando'),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(205, 34),
-                          foregroundColor: const Color(0xFF199F98),
-                          side: const BorderSide(color: Color(0xFF199F98)),
-                          shape: const StadiumBorder(),
-                          textStyle: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          child: _crearContenidoCentrado(context, productos),
         ),
       ),
     );
   }
 
-  Widget _contenido() {
+  Widget _crearEstructuraPantalla(BuildContext context, List<ProductoListado> productos) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        EncabezadoCliente(
+          cerrarSesion: () {
+            widget.controlador.cerrarSesion(context);
+          },
+        ),
+        VolverCliente(
+          volver: guardando
+              ? null
+              : () => widget.controlador.volver(context),
+        ),
+        const PresentacionCliente(
+          titulo: 'Mi Carrito',
+          descripcion: 'Revisá los productos que agregaste a tu carrito y editá las cantidades o eliminalos si lo necesitás.',
+        ),
+        const SizedBox(height: 22),
+        BuscadorProductos(
+          alCambiar: (String texto) {
+            setState(() {
+              busqueda = texto;
+            });
+          },
+        ),
+        const SizedBox(height: 12),
+        FiltrosProductos(
+          productos: productos,
+          categoria: categoria,
+          alSeleccionar: (String seleccionada) {
+            setState(() {
+              categoria = seleccionada;
+            });
+          },
+        ),
+        const SizedBox(height: 12),
+        if (guardando) const LinearProgressIndicator(),
+        _crearContenidoCarrito(),
+        const SizedBox(height: 18),
+        _crearBotonSeguirComprando(context),
+      ],
+    );
+  }
+
+  Widget _crearBotonSeguirComprando(BuildContext context) {
+    return Center(
+      child: OutlinedButton.icon(
+        onPressed: guardando
+            ? null
+            : () {
+                widget.controlador.seguirComprando(context);
+              },
+        icon: const Icon(Icons.arrow_back, color: Colors.black),
+        label: const Text('Seguir comprando'),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(205, 34),
+          foregroundColor: const Color(0xFF199F98),
+          side: const BorderSide(color: Color(0xFF199F98)),
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(fontSize: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _crearContenidoCarrito() {
     if (cargando) {
-      return const Padding(
-        padding: EdgeInsets.all(32),
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
     }
     if (errorCarga != null) {
       return Column(
@@ -201,11 +199,7 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
         padding: EdgeInsets.all(24),
         child: Column(
           children: [
-            Icon(
-              Icons.shopping_bag_outlined,
-              size: 42,
-              color: Color(0xFF50BDB5),
-            ),
+            Icon(Icons.shopping_bag_outlined, size: 42, color: Color(0xFF50BDB5)),
             SizedBox(height: 12),
             Text('Tu carrito está vacío.', textAlign: TextAlign.center),
           ],
@@ -223,10 +217,7 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
         if (visibles.isEmpty)
           const Padding(
             padding: EdgeInsets.all(20),
-            child: Text(
-              'No se encontraron productos.',
-              textAlign: TextAlign.center,
-            ),
+            child: Text('No se encontraron productos.', textAlign: TextAlign.center),
           ),
         for (final LineaCarritoCliente linea in visibles)
           Padding(
@@ -234,38 +225,42 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
             child: TarjetaProductoCliente(
               producto: linea.producto,
               esCarrito: true,
-              acciones: _cantidad(linea),
+              acciones: _crearControlCantidad(linea),
             ),
           ),
         // Buscar o filtrar no cambia los importes de todo el carrito.
         ResumenCarritoCliente(carrito: carritoActual),
         const SizedBox(height: 14),
-        Center(
-          child: FilledButton.icon(
-            onPressed: guardando || carritoActual.desdeCopiaLocal
-                ? null
-                : () async {
-                    await widget.controlador.pagarCarrito(
-                      context,
-                      carritoActual,
-                    );
-                    if (mounted) await _cargarCarrito();
-                  },
-            icon: const Icon(Icons.shopping_bag_outlined, size: 18),
-            label: const Text('Pagar carrito'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(205, 34),
-              backgroundColor: const Color(0xFF199F98),
-              shape: const StadiumBorder(),
-              textStyle: const TextStyle(fontSize: 12),
-            ),
-          ),
-        ),
+        _crearBotonPagar(carritoActual),
       ],
     );
   }
 
-  Widget _cantidad(LineaCarritoCliente linea) {
+  Widget _crearBotonPagar(CarritoCliente carritoActual) {
+    return Center(
+      child: FilledButton.icon(
+        onPressed: guardando || carritoActual.desdeCopiaLocal
+            ? null
+            : () async {
+                await widget.controlador.pagarCarrito(
+                  context,
+                  carritoActual,
+                );
+                if (mounted) await _cargarCarrito();
+              },
+        icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+        label: const Text('Pagar carrito'),
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(205, 34),
+          backgroundColor: const Color(0xFF199F98),
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(fontSize: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _crearControlCantidad(LineaCarritoCliente linea) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -277,7 +272,7 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _botonCantidad(
+              _crearBotonCantidad(
                 Icons.remove,
                 'Disminuir cantidad',
                 linea.cantidad <= 1
@@ -287,12 +282,9 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
               Semantics(
                 label:
                     'Cantidad de ${linea.producto.nombre}: ${linea.cantidad}',
-                child: Text(
-                  '${linea.cantidad}',
-                  style: const TextStyle(fontSize: 11),
-                ),
+                child: Text('${linea.cantidad}', style: const TextStyle(fontSize: 11)),
               ),
-              _botonCantidad(
+              _crearBotonCantidad(
                 Icons.add,
                 'Aumentar cantidad',
                 linea.cantidad >= linea.producto.stock
@@ -302,7 +294,7 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
             ],
           ),
         ),
-        _botonCantidad(
+        _crearBotonCantidad(
           Icons.delete_outline,
           'Eliminar producto',
           () => _eliminar(linea),
@@ -311,7 +303,7 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
     );
   }
 
-  Widget _botonCantidad(
+  Widget _crearBotonCantidad(
     IconData icono,
     String descripcion,
     VoidCallback? accion,
@@ -363,5 +355,20 @@ class _VerCarritoScreenState extends State<VerCarritoScreen> {
         });
       }
     }
+  }
+
+  // ================== DISEÑO Y PRESENTACIÓN ==================
+
+  Widget _crearContenidoCentrado(BuildContext context, List<ProductoListado> productos) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: _crearEstructuraPantalla(context, productos),
+        ),
+      ),
+    );
   }
 }

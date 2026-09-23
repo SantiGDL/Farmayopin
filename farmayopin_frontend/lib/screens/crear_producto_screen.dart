@@ -6,6 +6,8 @@ import '../controladores/controlador_general.dart';
 import '../widgets/foto_producto_selector.dart';
 
 // La pantalla dibuja el formulario y conecta sus eventos al controlador.
+// ================== ESTRUCTURA Y LÓGICA ==================
+
 class CrearProductoScreen extends StatefulWidget {
   const CrearProductoScreen({super.key, this.controlador});
   final ControladorCrearProducto? controlador;
@@ -31,7 +33,6 @@ class _CrearProductoScreenState extends State<CrearProductoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold es la estructura de la pantalla; body es su contenido.
     return ListenableBuilder(
       listenable: controlador,
       builder: (context, child) {
@@ -39,161 +40,84 @@ class _CrearProductoScreenState extends State<CrearProductoScreen> {
           canPop: !controlador.ocupado,
           child: AbsorbPointer(
             absorbing: controlador.ocupado,
-            child: contenido(context),
+            child: _crearPantalla(context),
           ),
         );
       },
     );
   }
 
-  Widget contenido(BuildContext context) {
+  Widget _crearPantalla(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         // Permite desplazar el formulario si la pantalla es pequeña
         // o si el teclado tapa los campos.
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            // Equivale a un max-width de CSS. En celular ocupa lo disponible.
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: controlador.formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    encabezado(context),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: () => controlador.cancelar(context),
-                        icon: const Icon(Icons.arrow_back),
-                        label: const Text('Volver'),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    tarjetaPresentacion(),
-                    const SizedBox(height: 24),
-
-                    campoTexto(
-                      etiqueta: 'Código',
-                      ayuda: 'Ingresá un código único',
-                      icono: Icons.qr_code,
-                      campo: controlador.codigo,
-                      validar: controlador.validarObligatorio,
-                    ),
-                    const SizedBox(height: 16),
-                    CamposProducto(controlador: controlador),
-                    const SizedBox(height: 16),
-                    const Text('Foto del producto'),
-                    const SizedBox(height: 6),
-                    zonaFoto(context),
-                    const SizedBox(height: 20),
-
-                    // onPressed equivale a la función de un onclick.
-                    FilledButton.icon(
-                      onPressed: controlador.ocupado
-                          ? null
-                          : () => controlador.guardarProducto(context),
-                      icon: const Icon(Icons.save_outlined),
-                      label: Text(
-                        controlador.ocupado
-                            ? controlador.progreso
-                            : 'Guardar producto',
-                      ),
-                      style: FilledButton.styleFrom(
-                        textStyle: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: () => controlador.cancelar(context),
-                      child: const Text('Cancelar'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+        child: _crearContenidoCentrado(context),
       ),
     );
   }
 
-  // Estas funciones devuelven piezas de interfaz para que build se lea
-  // de arriba abajo. No hace falta crear un archivo por cada pieza.
-  Widget encabezado(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.asset('assets/images/farmayopin_logo.png', width: 100),
-            const Text(
-              'Administrador',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
-        ),
-        TextButton.icon(
-          onPressed: () => ControladorGeneral.cerrarSesion(context),
-          icon: const Icon(Icons.logout, size: 18),
-          label: const Text('Cerrar sesión'),
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.black87,
-            backgroundColor: const Color(0xFFF2F2F2),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget tarjetaPresentacion() {
-    // Container combina fondo, bordes y espacio: parecido a un div con CSS.
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF4BC3B5),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Row(
+  Widget _crearFormulario(BuildContext context) {
+    return Form(
+      key: controlador.formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Crear producto',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Agregá nuevos artículos al inventario de la farmacia.',
-                  style: TextStyle(color: Colors.white, fontSize: 13),
-                ),
-              ],
+          _crearEncabezado(context),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => controlador.cancelar(context),
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Volver'),
             ),
           ),
-          SizedBox(width: 12),
-          Icon(Icons.medication, size: 90, color: Color(0xFF9AE5D4)),
+          const SizedBox(height: 8),
+          _crearTarjetaPresentacion(),
+          const SizedBox(height: 24),
+
+          _crearCampoTexto(
+            etiqueta: 'Código',
+            ayuda: 'Ingresá un código único',
+            icono: Icons.qr_code,
+            campo: controlador.codigo,
+            validar: controlador.validarObligatorio,
+          ),
+          const SizedBox(height: 16),
+          CamposProducto(controlador: controlador),
+          const SizedBox(height: 16),
+          const Text('Foto del producto'),
+          const SizedBox(height: 6),
+          _crearSelectorFoto(context),
+          const SizedBox(height: 20),
+
+          _crearBotonGuardar(context),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: () => controlador.cancelar(context),
+            child: const Text('Cancelar'),
+          ),
         ],
       ),
     );
   }
 
-  // Un solo molde para los campos. Los parámetros entre { } se pasan
-  // por nombre: campoTexto(etiqueta: 'Stock', ayuda: '0', ...).
-  // required significa obligatorio; "lineas = 1" es un valor por defecto.
-  Widget campoTexto({
+  Widget _crearBotonGuardar(BuildContext context) {
+    return FilledButton.icon(
+      onPressed: controlador.ocupado
+          ? null
+          : () => controlador.guardarProducto(context),
+      icon: const Icon(Icons.save_outlined),
+      label: Text(controlador.ocupado ? controlador.progreso : 'Guardar producto'),
+      style: FilledButton.styleFrom(
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  // Reúne la etiqueta, el campo y su validación.
+  Widget _crearCampoTexto({
     required String etiqueta,
     required String ayuda,
     required IconData icono,
@@ -213,23 +137,13 @@ class _CrearProductoScreenState extends State<CrearProductoScreen> {
           maxLines: lineas,
           keyboardType: teclado,
           style: const TextStyle(fontSize: 14),
-          decoration: decoracionCampo(ayuda, icono),
+          decoration: _crearDecoracionCampo(ayuda, icono),
         ),
       ],
     );
   }
 
-  // Estilo compartido de los inputs; los bordes se heredan de main.dart.
-  InputDecoration decoracionCampo(String ayuda, IconData icono) {
-    return InputDecoration(
-      hintText: ayuda,
-      hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
-      prefixIcon: Icon(icono, size: 20, color: Colors.grey),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-    );
-  }
-
-  Widget zonaFoto(BuildContext context) {
+  Widget _crearSelectorFoto(BuildContext context) {
     return FotoProductoSelector(
       bytes: controlador.fotoBytes,
       nombre: controlador.nombreFoto,
@@ -237,6 +151,81 @@ class _CrearProductoScreenState extends State<CrearProductoScreen> {
           ? null
           : () => controlador.seleccionarFoto(context),
       quitar: controlador.ocupado ? null : controlador.quitarFoto,
+    );
+  }
+
+  // ================== DISEÑO Y PRESENTACIÓN ==================
+
+  Widget _crearContenidoCentrado(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        // Equivale a un max-width de CSS. En celular ocupa lo disponible.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: _crearFormulario(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _crearEncabezado(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Image.asset('assets/images/farmayopin_logo.png', width: 100),
+            const Text('Administrador', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
+        TextButton.icon(
+          onPressed: () => ControladorGeneral.cerrarSesion(context),
+          icon: const Icon(Icons.logout, size: 18),
+          label: const Text('Cerrar sesión'),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.black87,
+            backgroundColor: const Color(0xFFF2F2F2),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _crearTarjetaPresentacion() {
+    // Container combina fondo, bordes y espacio: parecido a un div con CSS.
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: const Color(0xFF4BC3B5), borderRadius: BorderRadius.circular(20)),
+      child: const Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Crear producto',
+                    style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                Text('Agregá nuevos artículos al inventario de la farmacia.',
+                    style: TextStyle(color: Colors.white, fontSize: 13)),
+              ],
+            ),
+          ),
+          SizedBox(width: 12),
+          Icon(Icons.medication, size: 90, color: Color(0xFF9AE5D4)),
+        ],
+      ),
+    );
+  }
+
+  // Estilo compartido de los inputs; los bordes se heredan de main.dart.
+  InputDecoration _crearDecoracionCampo(String ayuda, IconData icono) {
+    return InputDecoration(
+      hintText: ayuda,
+      hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+      prefixIcon: Icon(icono, size: 20, color: Colors.grey),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
     );
   }
 }

@@ -9,6 +9,8 @@ import '../widgets/imagen_producto.dart';
 import '../widgets/volver_cliente.dart';
 
 // Los dos accesos usan este formulario: el producto inicial es opcional.
+// ================== ESTRUCTURA Y LÓGICA ==================
+
 class EditarProductoScreen extends StatefulWidget {
   const EditarProductoScreen({
     super.key,
@@ -55,70 +57,7 @@ class _EditarProductoScreenState extends State<EditarProductoScreen> {
             absorbing: controlador.ocupado,
             child: Scaffold(
               body: SafeArea(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          EncabezadoAdmin(
-                            cerrarSesion: () =>
-                                widget.controladorAdmin.cerrarSesion(context),
-                          ),
-                          VolverCliente(
-                            volver: () => controlador.cancelar(context),
-                          ),
-                          _presentacion(),
-                          const SizedBox(height: 20),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Form(
-                              key: controlador.formKey,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  const Text('Foto del producto'),
-                                  const SizedBox(height: 12),
-                                  _foto(),
-                                  const SizedBox(height: 24),
-                                  CamposProducto(
-                                    controlador: controlador,
-                                    habilitado:
-                                        controlador.producto != null &&
-                                        !controlador.ocupado,
-                                    esEdicion: true,
-                                  ),
-                                  const SizedBox(height: 20),
-                                  FilledButton.icon(
-                                    onPressed:
-                                        controlador.producto == null ||
-                                            controlador.ocupado
-                                        ? null
-                                        : () => controlador.guardarProducto(
-                                            context,
-                                          ),
-                                    icon: const Icon(Icons.save_outlined),
-                                    label: Text(
-                                      controlador.ocupado
-                                          ? controlador.progreso
-                                          : 'Guardar cambios',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                child: _crearContenidoCentrado(context),
               ),
             ),
           ),
@@ -127,50 +66,67 @@ class _EditarProductoScreenState extends State<EditarProductoScreen> {
     );
   }
 
-  Widget _presentacion() {
+  Widget _crearEstructuraPantalla(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        EncabezadoAdmin(
+          cerrarSesion: () =>
+              widget.controladorAdmin.cerrarSesion(context),
+        ),
+        VolverCliente(
+          volver: () => controlador.cancelar(context),
+        ),
+        _crearPresentacion(),
+        const SizedBox(height: 20),
+        _crearFormulario(context),
+      ],
+    );
+  }
+
+  Widget _crearFormulario(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF50BDB5),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Editar producto',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 21,
-              fontWeight: FontWeight.bold,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(16)),
+      child: Form(
+        key: controlador.formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Foto del producto'),
+            const SizedBox(height: 12),
+            _crearSelectorFoto(),
+            const SizedBox(height: 24),
+            CamposProducto(
+              controlador: controlador,
+              habilitado:
+                  controlador.producto != null &&
+                  !controlador.ocupado,
+              esEdicion: true,
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Modifica la información del producto seleccionado.',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Image.asset(
-                  'assets/Iconos/IconoAdmin.png',
-                  height: 130,
-                  fit: BoxFit.contain,
-                  excludeFromSemantics: true,
-                ),
-              ),
-            ],
-          ),
-        ],
+            const SizedBox(height: 20),
+            _crearBotonGuardar(context),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _foto() {
+  Widget _crearBotonGuardar(BuildContext context) {
+    return FilledButton.icon(
+      onPressed:
+          controlador.producto == null ||
+              controlador.ocupado
+          ? null
+          : () => controlador.guardarProducto(
+              context,
+            ),
+      icon: const Icon(Icons.save_outlined),
+      label: Text(controlador.ocupado ? controlador.progreso : 'Guardar cambios'),
+    );
+  }
+
+  Widget _crearSelectorFoto() {
     final ProductoListado? producto = controlador.producto;
     final Widget imagen;
     if (producto == null) {
@@ -205,6 +161,52 @@ class _EditarProductoScreenState extends State<EditarProductoScreen> {
           style: TextButton.styleFrom(backgroundColor: const Color(0xFFB9E8E5)),
         ),
       ],
+    );
+  }
+
+  // ================== DISEÑO Y PRESENTACIÓN ==================
+
+  Widget _crearContenidoCentrado(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: _crearEstructuraPantalla(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _crearPresentacion() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: const Color(0xFF50BDB5), borderRadius: BorderRadius.circular(22)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Editar producto',
+              style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Modifica la información del producto seleccionado.',
+                    style: TextStyle(color: Colors.white, fontSize: 12)),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Image.asset(
+                  'assets/Iconos/IconoAdmin.png',
+                  height: 130,
+                  fit: BoxFit.contain,
+                  excludeFromSemantics: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
