@@ -3,10 +3,10 @@ class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     //Para el Emulador Android:
-    defaultValue: 'http://10.0.2.2:5206'
+    //defaultValue: 'http://10.0.2.2:5206'
 
     //Para la version Web:
-    //defaultValue: 'http://localhost:5206',
+    defaultValue: 'http://localhost:5206',
   );
 
   static Uri uri(String ruta) {

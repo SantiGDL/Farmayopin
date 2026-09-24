@@ -13,6 +13,7 @@ import '../screens/confirmar_compra_screen.dart';
 import '../screens/historico_compras_screen.dart';
 import '../screens/detalle_compra_screen.dart';
 import 'controlador_general.dart';
+import '../widgets/alerta_dialog.dart';
 
 // Coordina los botones del cliente. Las operaciones se delegan al servicio.
 class ControladorCliente {
@@ -135,10 +136,13 @@ class ControladorCliente {
     try {
       final CompraConfirmada compra = await servicio.confirmarCompra();
       if (!referenciaPantalla.mounted) return true;
-      _mostrarAviso(
+      await AlertaDialog.mostrar(
         referenciaPantalla,
-        'Compra #${compra.compraId} confirmada correctamente.',
+        'Pago realizado',
+        'Compra confirmada correctamente.',
+        true,
       );
+      if (!referenciaPantalla.mounted) return true;
       Navigator.of(referenciaPantalla).pop();
       return true;
     } catch (error) {

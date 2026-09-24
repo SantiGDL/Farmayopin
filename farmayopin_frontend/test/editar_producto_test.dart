@@ -32,6 +32,8 @@ const original = ProductoListado(
 );
 
 class ServicioEdicionPrueba extends ServicioAdmin {
+  @override
+  Future<Map<int, String>> listarCategorias() async => {0: 'Medicamentos', 1: 'Higiene', 3: 'Vitaminas', 4: 'Sin categoría'};
   ProductoListado actual = original;
   final List<EditarProducto> cambios = [];
   int subidas = 0;
@@ -175,12 +177,12 @@ void main() {
             .onPressed,
         isNull,
       );
-      await tocar(tester, 'Seleccione Producto a Editar');
+      await tocar(tester, 'SELECCIONE PRODUCTO');
       expect(find.text('Ver'), findsNothing);
       expect(find.text('Editar'), findsNothing);
       await tocar(tester, 'Volver');
-      expect(find.text('Seleccione Producto a Editar'), findsOneWidget);
-      await tocar(tester, 'Seleccione Producto a Editar');
+      expect(find.text('SELECCIONE PRODUCTO'), findsOneWidget);
+      await tocar(tester, 'SELECCIONE PRODUCTO');
       await tester.enterText(find.byType(TextField), 'Jab');
       await tester.pumpAndSettle();
       await tocar(tester, 'Jabón');
@@ -195,7 +197,7 @@ void main() {
         '1250.50',
       );
       expect(tester.widget<TextFormField>(campos.at(2)).controller!.text, '35');
-      expect(find.text('Higiene personal'), findsOneWidget);
+      expect(find.text('Higiene'), findsOneWidget);
       await tester.enterText(campos.at(0), 'Jabón nuevo');
       await tester.enterText(campos.at(1), '1500,25');
       await tocar(tester, 'Guardar cambios');
@@ -223,7 +225,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Ver'), findsOneWidget);
       await tocar(tester, 'Editar');
-      expect(find.text('Seleccione Producto a Editar'), findsNothing);
+      expect(find.text('SELECCIONE PRODUCTO'), findsNothing);
       await tester.enterText(
         find.byType(TextFormField).first,
         'Nombre editado',

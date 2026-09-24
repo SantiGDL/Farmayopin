@@ -18,12 +18,8 @@ class FiltrosProductos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Conservamos los filtros del diseño y añadimos las categorías reales.
-    // Vitaminas puede no tener resultados: el enum actual aún no la incluye.
+    // Solo ofrecemos categorías presentes en los productos del backend.
     final List<String> categorias = ['Todos'];
-    if (!soloCategoriasDisponibles) {
-      categorias.addAll(['Medicamentos', 'Vitaminas']);
-    }
     for (final ProductoListado producto in productos) {
       if (!categorias.contains(producto.categoria)) {
         categorias.add(producto.categoria);

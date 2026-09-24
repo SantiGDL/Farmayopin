@@ -13,7 +13,42 @@ abstract class ControladorFormularioProducto extends ChangeNotifier {
   ControladorFormularioProducto({
     this.servicio = const ServicioAdmin(),
     Future<XFile?> Function()? elegirArchivo,
-  }) : _elegirArchivo = elegirArchivo ?? _abrirSelector;
+  }) : _elegirArchivo = elegirArchivo ?? _abrirSelector {
+    cargarCategorias();
+  }
+
+  Map<int, String> categorias = {};
+  bool cargandoCategorias = true;
+  String? errorCategorias;
+  String? nombreCategoriaActual;
+
+  void resolverCategoriaActual() {
+    if (nombreCategoriaActual == null) return;
+    categoria = null;
+    for (final entrada in categorias.entries) {
+      if (entrada.value == nombreCategoriaActual) categoria = entrada.key;
+    }
+  }
+
+  Future<void> cargarCategorias() async {
+    cargandoCategorias = true;
+    errorCategorias = null;
+    notifyListeners();
+    try {
+      final recibidas = await servicio.listarCategorias();
+      if (cerrado) return;
+      categorias = recibidas;
+      resolverCategoriaActual();
+    } catch (_) {
+      if (cerrado) return;
+      errorCategorias = 'No se pudieron cargar las categorías.';
+    } finally {
+      if (!cerrado) {
+        cargandoCategorias = false;
+        notifyListeners();
+      }
+    }
+  }
 
   final ServicioAdmin servicio;
   final Future<XFile?> Function() _elegirArchivo;
@@ -66,7 +101,7 @@ abstract class ControladorFormularioProducto extends ChangeNotifier {
   }
 
   String? validarCategoria(int? valor) {
-    if (valor == null) return 'Seleccioná una categoría.';
+    if (valor == null || !categorias.containsKey(valor)) return 'Seleccioná una categoría.';
     return null;
   }
 

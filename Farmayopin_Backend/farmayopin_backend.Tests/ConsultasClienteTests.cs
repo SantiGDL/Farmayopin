@@ -70,7 +70,7 @@ public class ConsultasClienteTests : IDisposable
         persistencia.Database.EnsureCreated();
         Producto medicamento = new Producto("P1", "Paracetamol", "Analgésico", 2450m, "/Imagenes/Productos/Paracetamol.jpeg", 12)
         {
-            Categoria = CategoriaProducto.ANALGESICOS,
+            Categoria = CategoriaProducto.MEDICAMENTOS,
             Unidad = UnidadMedida.TABLETA
         };
         Producto higiene = new Producto("P2", "Jabón", "Higiene personal", 100.50m, null, 0)
@@ -125,7 +125,7 @@ public class ConsultasClienteTests : IDisposable
         Assert.Equal(administrativos.GetRawText(), productos.GetRawText());
         Assert.Equal(2, productos.GetArrayLength());
         Assert.Equal("Jabón", productos[0].GetProperty("nombre").GetString());
-        Assert.Equal("ANALGESICOS", productos[1].GetProperty("categoria").GetString());
+        Assert.Equal("MEDICAMENTOS", productos[1].GetProperty("categoria").GetString());
         Assert.Equal("TABLETA", productos[1].GetProperty("unidad").GetString());
     }
 
@@ -437,7 +437,7 @@ public class ConsultasClienteTests : IDisposable
         Assert.Equal("Nombre histórico", lineas[0].GetProperty("producto").GetProperty("nombre").GetString());
         Assert.Equal(100m, lineas[0].GetProperty("producto").GetProperty("precio").GetDecimal());
         Assert.Equal(2, lineas[0].GetProperty("cantidad").GetInt32());
-        Assert.Equal("ANALGESICOS", lineas[0].GetProperty("producto").GetProperty("categoria").GetString());
+        Assert.Equal("MEDICAMENTOS", lineas[0].GetProperty("producto").GetProperty("categoria").GetString());
         Assert.Equal(250m, detalle.GetProperty("subtotal").GetDecimal());
         Assert.Equal(700m, detalle.GetProperty("envio").GetDecimal());
         Assert.Equal(guardadas[1].PrecioTotal, detalle.GetProperty("total").GetDecimal());

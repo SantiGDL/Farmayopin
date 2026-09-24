@@ -14,12 +14,6 @@ class CamposProducto extends StatelessWidget {
   final bool habilitado;
   final bool esEdicion;
 
-  static const Map<int, String> categorias = {
-    0: 'Analgésicos',
-    1: 'Higiene personal',
-    2: 'Primeros auxilios',
-  };
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -64,7 +58,7 @@ class CamposProducto extends StatelessWidget {
         const SizedBox(height: 6),
         DropdownButtonFormField<int>(
           // Al seleccionar otro producto hay que reemplazar el valor del campo.
-          key: ValueKey('${habilitado}_${controlador.codigo.text}'),
+          key: ValueKey('${habilitado}_${controlador.codigo.text}_${controlador.cargandoCategorias}'),
           initialValue: controlador.categoria,
           isExpanded: true,
           decoration: const InputDecoration(
@@ -76,12 +70,19 @@ class CamposProducto extends StatelessWidget {
             ),
           ),
           items: [
-            for (final entrada in categorias.entries)
+            for (final entrada in controlador.categorias.entries)
               DropdownMenuItem(value: entrada.key, child: Text(entrada.value)),
           ],
           validator: controlador.validarCategoria,
-          onChanged: habilitado ? controlador.cambiarCategoria : null,
+          onChanged: habilitado && !controlador.cargandoCategorias
+              ? controlador.cambiarCategoria : null,
         ),
+        if (controlador.cargandoCategorias) const LinearProgressIndicator(),
+        if (controlador.errorCategorias != null)
+          TextButton(
+            onPressed: controlador.cargarCategorias,
+            child: Text('${controlador.errorCategorias} Reintentar'),
+          ),
         const SizedBox(height: 16),
         _campo(
           esEdicion ? 'Detalle' : 'Descripción',

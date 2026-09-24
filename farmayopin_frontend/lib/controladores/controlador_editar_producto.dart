@@ -26,12 +26,8 @@ class ControladorEditarProducto extends ControladorFormularioProducto {
     precio.text = seleccionado.precio.toStringAsFixed(2);
     stock.text = seleccionado.stock.toString();
     detalle.text = seleccionado.descripcion;
-    categoria = switch (seleccionado.categoria) {
-      'Medicamentos' || 'ANALGESICOS' => 0,
-      'Higiene' || 'HIGIENE' => 1,
-      'Primeros auxilios' || 'PRIMEROS_AUXILIOS' => 2,
-      _ => null,
-    };
+    nombreCategoriaActual = seleccionado.categoria;
+    resolverCategoriaActual();
     fotoBytes = null;
     nombreFoto = null;
     fotoUrl = seleccionado.fotoUrl;
@@ -91,19 +87,13 @@ class ControladorEditarProducto extends ControladorFormularioProducto {
         resultado.exito,
       );
       if (cerrado || !context.mounted || !resultado.exito) return;
-      final String? categoriaBackend = switch (categoria) {
-        0 => 'ANALGESICOS',
-        1 => 'HIGIENE',
-        2 => 'PRIMEROS_AUXILIOS',
-        _ => null,
-      };
       Navigator.of(context).pop(
         ProductoListado(
           cambios.nombre,
           cambios.detalle,
           cambios.precio,
           cambios.stock,
-          ProductoListado.nombreCategoria(categoriaBackend),
+          categorias[cambios.categoria]!,
           id: original.id,
           codigo: original.codigo,
           fotoUrl: cambios.fotoUrl,

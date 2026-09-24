@@ -11,6 +11,12 @@ namespace farmayopin_backend.Controladores;
 
 public class ControladorAdmin : ControllerBase
 {
+    [HttpGet("categorias")]
+    public IActionResult Categorias() => Ok(
+        Enum.GetValues<farmayopin_backend.Modelos.CategoriaProducto>()
+            .Where(c => c != farmayopin_backend.Modelos.CategoriaProducto.PRIMEROS_AUXILIOS)
+            .Select(c => new { id = (int)c, nombre = farmayopin_backend.Modelos.CatalogoCategorias.Nombre(c) }));
+
     //Este controlador tiene todas las Funcionalidades del ADMIN:
     //<--Desde acá las llamo, luego el Servicio Admin es el que les da vida con la lógica -->
     // • Crear Producto.

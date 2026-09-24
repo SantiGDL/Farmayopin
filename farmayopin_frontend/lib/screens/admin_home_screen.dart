@@ -78,7 +78,7 @@ class AdminHomeScreen extends StatelessWidget {
             _crearTarjetaOpcion(
               width: cardWidth,
               title: 'Histórico de Compras',
-              description: 'Ver historial de compras de un producto (Fecha, Cantidad, Cliente).',
+              description: 'Ver historial de compras de un producto seleccionado.',
               iconFile: 'IconoHistoricoDeCompra1Prod.png',
               onTap: () => controlador.abrirHistoricoProducto(context),
             ),
