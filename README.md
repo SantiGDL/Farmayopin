@@ -88,3 +88,12 @@ http://10.0.2.2:PUERTO
 en este caso 
 
 http://10.0.2.2:5206
+
+### Comandos para ajustar imagen del emulador android
+
+En este caso como se utiliza una pantalla de 720 x 1280 se ajustaron las dimesiones del celular usando los siguientes comandos: 
+
+```bash
+adb shell wm size 540x1200
+adb shell wm density 210
+```
