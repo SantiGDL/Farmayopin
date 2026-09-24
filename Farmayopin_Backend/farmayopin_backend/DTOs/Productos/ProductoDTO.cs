@@ -14,6 +14,7 @@ public class ProductoDTO
     public string? FotoUrl { get; set; }
     public int Stock { get; set; }
     public string? Categoria { get; set; }
+    public string CategoriaNombre => farmayopin_backend.Modelos.CatalogoCategorias.Nombre(Categoria);
     public string? Unidad { get; set; }
 
     public ProductoDTO(int id, string codigo, string nombre, string detalle, decimal precio, string? fotoUrl, int stock,

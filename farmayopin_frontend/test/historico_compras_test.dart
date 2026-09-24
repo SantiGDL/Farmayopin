@@ -44,6 +44,7 @@ final Map<String, dynamic> detalle = {
         'precio': 2450,
         'stock': 10,
         'categoria': 'ANALGESICOS',
+        'categoriaNombre': 'Medicamentos',
         'fotoUrl': null,
         'unidad': 'TABLETA',
       },

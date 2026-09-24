@@ -32,7 +32,7 @@ class ProductoListado {
       datosBack['detalle'] as String,
       (datosBack['precio'] as num).toDouble(),
       datosBack['stock'] as int,
-      nombreCategoria(datosBack['categoria'] as String?),
+      datosBack['categoriaNombre'] as String? ?? datosBack['categoria'] as String? ?? '',
       id: datosBack['id'] as int,
       codigo: datosBack['codigo'] as String,
       fotoUrl: datosBack['fotoUrl'] as String?,
@@ -40,21 +40,4 @@ class ProductoListado {
     );
   }
 
-  // Las categorías se mantienen en el backend. Solo traducimos sus nombres
-  // para la presentación y los filtros, sin deducirlos del nombre del producto.
-  static String nombreCategoria(String? categoria) {
-    if (categoria == null || categoria.isEmpty) {
-      return 'Sin categoría';
-    }
-    if (categoria == 'ANALGESICOS') {
-      return 'Medicamentos';
-    }
-    if (categoria == 'HIGIENE') {
-      return 'Higiene';
-    }
-    if (categoria == 'PRIMEROS_AUXILIOS') {
-      return 'Primeros auxilios';
-    }
-    return categoria;
-  }
 }

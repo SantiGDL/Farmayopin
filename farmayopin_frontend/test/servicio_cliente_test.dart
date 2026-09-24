@@ -17,6 +17,7 @@ void main() {
     'precio': 10.5,
     'stock': 12,
     'categoria': 'ANALGESICOS',
+    'categoriaNombre': 'Medicamentos',
     'unidad': 'TABLETA',
     'fotoUrl': '/Imagenes/Productos/Paracetamol.jpeg',
   };

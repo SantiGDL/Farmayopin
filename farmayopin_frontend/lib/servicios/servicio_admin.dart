@@ -22,6 +22,22 @@ class ServicioAdmin {
   // En pruebas se puede inyectar un cliente HTTP sin usar un servidor real.
   final http.Client? cliente;
 
+  Future<Map<int, String>> listarCategorias() async {
+    final conexion = cliente ?? http.Client();
+    try {
+      final respuesta = await conexion.get(
+        ApiConfig.uri('/api/controladorAdmin/categorias'),
+      ).timeout(const Duration(seconds: 15));
+      if (respuesta.statusCode != 200) {
+        throw Exception('No se pudieron cargar las categorías.');
+      }
+      final datos = jsonDecode(utf8.decode(respuesta.bodyBytes)) as List;
+      return {for (final dato in datos) dato['id'] as int: dato['nombre'] as String};
+    } finally {
+      if (cliente == null) conexion.close();
+    }
+  }
+
   Future<ResultadoEditarProducto> editarProducto(EditarProducto producto) async {
     final http.Client conexion = cliente ?? http.Client();
     try {

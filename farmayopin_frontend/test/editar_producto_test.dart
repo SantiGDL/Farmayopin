@@ -32,6 +32,8 @@ const original = ProductoListado(
 );
 
 class ServicioEdicionPrueba extends ServicioAdmin {
+  @override
+  Future<Map<int, String>> listarCategorias() async => {0: 'Medicamentos', 1: 'Higiene', 3: 'Vitaminas', 4: 'Sin categoría'};
   ProductoListado actual = original;
   final List<EditarProducto> cambios = [];
   int subidas = 0;
@@ -195,7 +197,7 @@ void main() {
         '1250.50',
       );
       expect(tester.widget<TextFormField>(campos.at(2)).controller!.text, '35');
-      expect(find.text('Higiene personal'), findsOneWidget);
+      expect(find.text('Higiene'), findsOneWidget);
       await tester.enterText(campos.at(0), 'Jabón nuevo');
       await tester.enterText(campos.at(1), '1500,25');
       await tocar(tester, 'Guardar cambios');

@@ -19,6 +19,8 @@ final Uint8List png = base64Decode(
 );
 
 class ServicioPrueba extends ServicioAdmin {
+  @override
+  Future<Map<int, String>> listarCategorias() async => {0: 'Medicamentos', 1: 'Higiene', 3: 'Vitaminas', 4: 'Sin categoría'};
   int subidas = 0;
   final List<CrearProducto> productos = [];
   bool fallaFoto = false;
@@ -107,7 +109,7 @@ Future<void> completar(WidgetTester tester) async {
   await tester.ensureVisible(selector);
   await tester.tap(selector);
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Higiene personal').last);
+  await tester.tap(find.text('Higiene').last);
   await tester.pumpAndSettle();
 }
 

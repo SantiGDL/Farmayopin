@@ -103,6 +103,25 @@ public class CrearProductoTests : IDisposable
         return await _cliente.PostAsync("/api/controladorAdmin/subirFoto", cuerpo);
     }
 
+    [Theory]
+    [InlineData(0, "MEDICAMENTOS")]
+    [InlineData(1, "HIGIENE")]
+    [InlineData(3, "VITAMINAS")]
+    [InlineData(4, "SIN_CATEGORIA")]
+    public async Task GuardaCadaCategoriaEnLaBaseDeDatos(int categoria, string nombre)
+    {
+        Assert.Equal(HttpStatusCode.Created, (await Crear("CATEGORIA", categoria: categoria)).StatusCode);
+        using var consulta = _conexion.CreateCommand();
+        consulta.CommandText = "SELECT Categoria FROM Productos WHERE Codigo = 'CATEGORIA'";
+        Assert.Equal(categoria, Convert.ToInt32(await consulta.ExecuteScalarAsync()));
+        JsonElement lista = await _cliente.GetFromJsonAsync<JsonElement>("/api/controladorAdmin/listarProductos");
+        Assert.Equal(nombre, lista[0].GetProperty("categoria").GetString());
+        JsonElement catalogo = await _cliente.GetFromJsonAsync<JsonElement>("/api/controladorAdmin/categorias");
+        Assert.Equal(4, catalogo.GetArrayLength());
+        var opcion = catalogo.EnumerateArray().Single(c => c.GetProperty("id").GetInt32() == categoria);
+        Assert.Equal(opcion.GetProperty("nombre").GetString(), lista[0].GetProperty("categoriaNombre").GetString());
+    }
+
     [Fact]
     public async Task CreaSinFotoYGuardaCategoriaUnidadYDecimales()
     {
