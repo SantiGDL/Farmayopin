@@ -182,7 +182,7 @@ class _HistoricoProductoScreenState extends State<HistoricoProductoScreen> {
             children: [
               Row(
                 children: [
-                  ImagenProducto(producto: seleccionado, tamano: 48),
+                  ImagenProducto(producto: seleccionado, tamano: 128),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(seleccionado.nombre,

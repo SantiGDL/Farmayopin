@@ -130,9 +130,10 @@ class _EditarProductoScreenState extends State<EditarProductoScreen> {
     final ProductoListado? producto = controlador.producto;
     final Widget imagen;
     if (producto == null) {
-      imagen = FilledButton(
-        onPressed: () => controlador.seleccionarProducto(context),
-        child: const Text('Seleccione Producto a Editar'),
+      imagen = const Icon(
+        Icons.image_outlined,
+        size: 64,
+        color: Colors.grey,
       );
     } else if (controlador.fotoBytes != null) {
       imagen = Image.memory(
@@ -187,23 +188,57 @@ class _EditarProductoScreenState extends State<EditarProductoScreen> {
         children: [
           const Text('Editar producto',
               style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const Expanded(
-                child: Text('Modifica la información del producto seleccionado.',
-                    style: TextStyle(color: Colors.white, fontSize: 12)),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Image.asset(
-                  'assets/Iconos/IconoAdmin.png',
-                  height: 130,
-                  fit: BoxFit.contain,
-                  excludeFromSemantics: true,
-                ),
-              ),
-            ],
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final Widget seleccion = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Modifica la información del producto seleccionado.',
+                      style: TextStyle(color: Colors.white, fontSize: 12)),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: controlador.ocupado
+                        ? null
+                        : () => controlador.seleccionarProducto(context),
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                    ),
+                    child: Text(
+                      controlador.producto == null
+                          ? 'SELECCIONE PRODUCTO'
+                          : 'CAMBIAR PRODUCTO',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              );
+              final Widget ilustracion = Image.asset(
+                'assets/Iconos/IconoAdmin.png',
+                width: 115,
+                height: 135,
+                fit: BoxFit.contain,
+                excludeFromSemantics: true,
+              );
+              if (constraints.maxWidth < 310 ||
+                  MediaQuery.textScalerOf(context).scale(14) > 18) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    seleccion,
+                    Align(alignment: Alignment.centerRight, child: ilustracion),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: seleccion),
+                  const SizedBox(width: 8),
+                  ilustracion,
+                ],
+              );
+            },
           ),
         ],
       ),

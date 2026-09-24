@@ -88,7 +88,7 @@ class ClienteHomeScreen extends StatelessWidget {
               children: [
                 const Text('Histórico de Compras',
                     style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [

@@ -12,7 +12,7 @@ namespace farmayopin_backend.Servicios;
 public class ServicioCliente
 {
     private readonly ManejadorPersistencia _persistencia;
-    private const decimal CostoEnvio = 700m;
+    private static readonly decimal CostoEnvio = Random.Shared.Next(100, 1001);
 
     public ServicioCliente(ManejadorPersistencia persistencia)
     {

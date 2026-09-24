@@ -150,7 +150,12 @@ void main() {
       expect(tester.widget<FilledButton>(confirmar).onPressed, isNull);
       expect(servicio.confirmaciones, 1);
       resultado.complete(const CompraConfirmada(1, 4900, 700, 5600));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('Pago realizado'), findsOneWidget);
+      expect(find.text('Compra #1 confirmada correctamente.'), findsOneWidget);
+      await pulsar(tester, 'Aceptar');
       expect(find.byType(VerCarritoScreen), findsOneWidget);
       expect(find.text('Tu carrito está vacío.'), findsOneWidget);
       expect(servicio.confirmaciones, 1);

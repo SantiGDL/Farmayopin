@@ -177,12 +177,12 @@ void main() {
             .onPressed,
         isNull,
       );
-      await tocar(tester, 'Seleccione Producto a Editar');
+      await tocar(tester, 'SELECCIONE PRODUCTO');
       expect(find.text('Ver'), findsNothing);
       expect(find.text('Editar'), findsNothing);
       await tocar(tester, 'Volver');
-      expect(find.text('Seleccione Producto a Editar'), findsOneWidget);
-      await tocar(tester, 'Seleccione Producto a Editar');
+      expect(find.text('SELECCIONE PRODUCTO'), findsOneWidget);
+      await tocar(tester, 'SELECCIONE PRODUCTO');
       await tester.enterText(find.byType(TextField), 'Jab');
       await tester.pumpAndSettle();
       await tocar(tester, 'Jabón');
@@ -225,7 +225,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Ver'), findsOneWidget);
       await tocar(tester, 'Editar');
-      expect(find.text('Seleccione Producto a Editar'), findsNothing);
+      expect(find.text('SELECCIONE PRODUCTO'), findsNothing);
       await tester.enterText(
         find.byType(TextFormField).first,
         'Nombre editado',
